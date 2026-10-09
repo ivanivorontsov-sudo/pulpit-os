@@ -103,6 +103,20 @@ def test_drag_and_button_constructor(tmp_path: Path) -> None:
     assert "Жми" in html
 
 
+def test_preview_inlines_style_and_image(tmp_path: Path) -> None:
+    from pulpit.engines.preview_doc import standalone
+
+    image = tmp_path / "assets"
+    image.mkdir()
+    file = image / "pic.png"
+    Image.new("RGB", (4, 4), (10, 20, 30)).save(file)
+    html = '<link rel="stylesheet" href="style.css"><img src="assets/pic.png" alt="pic">'
+    document = standalone(html, "body { color: #112233; }", tmp_path)
+    assert "<style>" in document
+    assert "style.css" not in document
+    assert "data:image/png;base64," in document
+
+
 def test_units() -> None:
     assert abs(units.convert_temperature(0, "C", "F") - 32) < 0.01
     assert abs(units.convert_length(1, "м", "см") - 100) < 0.01

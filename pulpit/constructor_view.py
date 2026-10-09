@@ -10,7 +10,8 @@ import customtkinter as ctk
 
 from pulpit.engines.constructor import REGISTRY, TEMPLATES, Constructor
 from pulpit.engines.site_project import add_image, load_project, save_project
-from pulpit.engines.site_render import export_project, preview_html
+from pulpit.engines.preview_doc import standalone
+from pulpit.engines.site_render import _css, export_project, preview_html
 
 
 class ConstructorView(ctk.CTkFrame):
@@ -155,9 +156,8 @@ class ConstructorView(ctk.CTkFrame):
         self.render_html()
 
     def render_html(self) -> None:
-        target = self.folder / "preview.html"
-        target.write_text(preview_html(self.doc.project, self.doc.page_index, self.folder, embedded=True), encoding="utf-8")
-        self.preview.show_file(target)
+        document = standalone(preview_html(self.doc.project, self.doc.page_index, self.folder, embedded=True), _css(self.doc.project), self.folder)
+        self.preview.show_html(document)
 
     def _bind_palette(self, widget, kind: str) -> None:
         widget.bind("<ButtonPress-1>", lambda _event, name=kind: self._palette_start(name))

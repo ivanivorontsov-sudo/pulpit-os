@@ -23,6 +23,14 @@ class HtmlPane(ctk.CTkFrame):
             self.fallback.pack(fill="both", expand=True)
             self.fallback.insert("1.0", f"Встроенный просмотр не поднялся: {exc}\nПоставь tkinterweb.")
 
+    def show_html(self, html: str) -> None:
+        if self.view is not None:
+            self.view.load_html(html)
+            return
+        if self.fallback is not None:
+            self.fallback.delete("1.0", "end")
+            self.fallback.insert("1.0", html)
+
     def show_file(self, path: str | Path) -> None:
         target = Path(path)
         if self.view is not None:
