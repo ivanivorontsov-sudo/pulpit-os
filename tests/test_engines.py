@@ -83,6 +83,26 @@ def test_constructor_template_undo_and_export(tmp_path: Path) -> None:
     assert Path(result["zip"]).stat().st_size > 32
 
 
+def test_drag_and_button_constructor(tmp_path: Path) -> None:
+    from pulpit.engines.constructor import Constructor
+    from pulpit.engines.site_project import save_project
+    from pulpit.engines.site_render import export_project
+
+    doc = Constructor()
+    doc.page()["blocks"] = []
+    first = doc.add("text")
+    second = doc.add("heading")
+    doc.move_to(second["id"], 0)
+    assert doc.page()["blocks"][0]["id"] == second["id"]
+    assert doc.page()["blocks"][1]["id"] == first["id"]
+    doc.insert_button({"text": "Жми", "href": "page-1.html", "style": "outline", "size": "lg", "shape": "pill", "color": "#112233"})
+    save_project(tmp_path / "project", doc.project)
+    export_project(tmp_path / "project", tmp_path / "site")
+    html = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
+    assert "button outline lg pill" in html
+    assert "Жми" in html
+
+
 def test_units() -> None:
     assert abs(units.convert_temperature(0, "C", "F") - 32) < 0.01
     assert abs(units.convert_length(1, "м", "см") - 100) < 0.01

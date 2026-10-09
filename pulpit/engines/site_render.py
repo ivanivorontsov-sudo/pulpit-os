@@ -127,7 +127,13 @@ def _blocks(blocks: list[dict], asset_root: Path, preview: bool) -> str:
             chunks.append(f"<blockquote>{text}</blockquote>")
         elif kind == "button":
             href = html.escape(block.get("href") or "#")
-            chunks.append(f'<p><a class="button" href="{href}">{text}</a></p>')
+            style = html.escape(str(block.get("style") or "fill"))
+            size = html.escape(str(block.get("size") or "md"))
+            shape = html.escape(str(block.get("shape") or "square"))
+            color = html.escape(str(block.get("color") or "#c45c26"))
+            chunks.append(
+                f'<p><a class="button {style} {size} {shape}" style="--btn:{color}" href="{href}">{text}</a></p>'
+            )
         elif kind == "columns":
             chunks.append(f'<section class="cols"><p>{text}</p><p>{sub}</p></section>')
         elif kind == "image":
@@ -176,6 +182,13 @@ img {{ max-width: 100%; display: block; border: 1px solid var(--ink); }}
 .cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }}
 .cards article, .faq details {{ border: 1px solid var(--ink); padding: 12px; }}
 .features {{ padding-left: 18px; }}
-blockquote {{ border-left: 4px solid var(--accent); margin-left: 0; padding-left: 12px; }}
+.button {{ display: inline-block; padding: 8px 14px; text-decoration: none; border: 2px solid transparent; }}
+.button.fill {{ background: var(--btn, var(--accent)); color: white; }}
+.button.outline {{ background: transparent; color: var(--btn, var(--accent)); border-color: var(--btn, var(--accent)); }}
+.button.ghost {{ background: transparent; color: var(--ink); }}
+.button.sm {{ padding: 4px 10px; font-size: 14px; }}
+.button.lg {{ padding: 14px 22px; font-size: 20px; }}
+.button.pill {{ border-radius: 999px; }}
+.button.square {{ border-radius: 4px; }}
 footer {{ padding-bottom: 40px; font-size: 14px; }}
 """

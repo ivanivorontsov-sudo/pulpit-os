@@ -24,7 +24,11 @@ REGISTRY: dict[str, dict] = {
     "cards": {"label": "Карточки", "fields": ["text", "sub"], "defaults": {"text": "Одна|Две|Три", "sub": "Коротко|Ещё|И ещё"}},
     "features": {"label": "Преимущества", "fields": ["text"], "defaults": {"text": "Без сети|Картинки в zip|Office рядом"}},
     "faq": {"label": "Вопросы", "fields": ["text"], "defaults": {"text": "Где интернет?|Не нужен\nКак открыть?|index.html"}},
-    "button": {"label": "Кнопка", "fields": ["text", "href"], "defaults": {"text": "Дальше", "href": "index.html"}},
+    "button": {
+        "label": "Кнопка",
+        "fields": ["text", "href", "style", "size", "shape", "color"],
+        "defaults": {"text": "Дальше", "href": "index.html", "style": "fill", "size": "md", "shape": "square", "color": "#c45c26"},
+    },
     "spacer": {"label": "Отступ", "fields": ["text"], "defaults": {"text": "32"}},
     "footer": {"label": "Подвал", "fields": ["text"], "defaults": {"text": "Собрано в Пульте"}},
 }
@@ -66,6 +70,36 @@ class Constructor:
             return
         self._snapshot()
         current[key] = value
+
+    def move_to(self, block_id: str, target_index: int) -> None:
+        blocks = self.page()["blocks"]
+        index = next((i for i, item in enumerate(blocks) if item["id"] == block_id), -1)
+        if index < 0:
+            return
+        target_index = max(0, min(target_index, len(blocks) - 1))
+        if index == target_index:
+            return
+        self._snapshot()
+        item = blocks.pop(index)
+        blocks.insert(target_index, item)
+        self.selected = item["id"]
+
+    def insert_at(self, kind: str, index: int) -> dict:
+        self._snapshot()
+        block = make_block(kind)
+        blocks = self.page()["blocks"]
+        blocks.insert(max(0, min(index, len(blocks))), block)
+        self.selected = block["id"]
+        return block
+
+    def insert_button(self, spec: dict, index: int | None = None) -> dict:
+        self._snapshot()
+        block = make_block("button")
+        block.update({key: value for key, value in spec.items() if value not in (None, "")})
+        blocks = self.page()["blocks"]
+        blocks.insert(len(blocks) if index is None else max(0, min(index, len(blocks))), block)
+        self.selected = block["id"]
+        return block
 
     def move(self, delta: int) -> None:
         blocks = self.page()["blocks"]
