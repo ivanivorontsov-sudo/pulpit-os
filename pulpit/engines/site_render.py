@@ -98,6 +98,31 @@ def _blocks(blocks: list[dict], asset_root: Path, preview: bool) -> str:
         sub = html.escape(block.get("sub") or "")
         if kind == "hero":
             chunks.append(f'<section class="hero"><h3>{text}</h3><p>{sub}</p></section>')
+        elif kind == "heading":
+            chunks.append(f"<h3>{text}</h3>")
+        elif kind == "features":
+            items = "".join(f"<li>{html.escape(part.strip())}</li>" for part in (block.get("text") or "").split("|") if part.strip())
+            chunks.append(f'<ul class="features">{items}</ul>')
+        elif kind == "cards":
+            titles = [part.strip() for part in (block.get("text") or "").split("|")]
+            notes = [part.strip() for part in (block.get("sub") or "").split("|")]
+            cards = "".join(
+                f"<article><h3>{html.escape(title)}</h3><p>{html.escape(notes[i] if i < len(notes) else '')}</p></article>"
+                for i, title in enumerate(titles) if title
+            )
+            chunks.append(f'<section class="cards">{cards}</section>')
+        elif kind == "faq":
+            rows = []
+            for line in (block.get("text") or "").splitlines():
+                question, _, answer = line.partition("|")
+                if question.strip():
+                    rows.append(f"<details><summary>{html.escape(question.strip())}</summary><p>{html.escape(answer.strip())}</p></details>")
+            chunks.append('<section class="faq">' + "".join(rows) + "</section>")
+        elif kind == "spacer":
+            size = "".join(ch for ch in str(block.get("text") or "32") if ch.isdigit()) or "32"
+            chunks.append(f'<div style="height:{size}px"></div>')
+        elif kind == "footer":
+            chunks.append(f'<p class="foot">{text}</p>')
         elif kind == "quote":
             chunks.append(f"<blockquote>{text}</blockquote>")
         elif kind == "button":
@@ -148,7 +173,9 @@ nav a {{ margin-right: 16px; }}
 .cols {{ display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }}
 .gallery {{ display: grid; gap: 12px; }}
 img {{ max-width: 100%; display: block; border: 1px solid var(--ink); }}
-.button {{ display: inline-block; padding: 8px 14px; background: var(--accent); color: white; text-decoration: none; }}
+.cards {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }}
+.cards article, .faq details {{ border: 1px solid var(--ink); padding: 12px; }}
+.features {{ padding-left: 18px; }}
 blockquote {{ border-left: 4px solid var(--accent); margin-left: 0; padding-left: 12px; }}
 footer {{ padding-bottom: 40px; font-size: 14px; }}
 """

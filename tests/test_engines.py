@@ -63,6 +63,23 @@ def test_site_zip(tmp_path: Path) -> None:
     assert "Привет из zip" in (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
 
 
-def test_units() -> None:
+def test_constructor_template_undo_and_export(tmp_path: Path) -> None:
+    from pulpit.engines.constructor import Constructor
+    from pulpit.engines.site_project import save_project
+    from pulpit.engines.site_render import export_project
+
+    doc = Constructor()
+    doc.apply_template("landing")
+    assert any(block["type"] == "features" for block in doc.page()["blocks"])
+    before = len(doc.page()["blocks"])
+    doc.add("faq")
+    assert len(doc.page()["blocks"]) == before + 1
+    assert doc.undo()
+    assert len(doc.page()["blocks"]) == before
+    save_project(tmp_path / "project", doc.project)
+    result = export_project(tmp_path / "project", tmp_path / "site")
+    html = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
+    assert "features" in html
+    assert Path(result["zip"]).stat().st_size > 32
     assert abs(units.convert_temperature(0, "C", "F") - 32) < 0.01
     assert abs(units.convert_length(1, "м", "см") - 100) < 0.01

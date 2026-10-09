@@ -1,7 +1,7 @@
 ; Установщик Пульта. Собирает папку PyInstaller в один Setup.exe.
 
 #define MyAppName "Пульт"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.2.0"
 #define MyAppPublisher "ivanivorontsov-sudo"
 #define MyAppExeName "Pulpit.exe"
 #define MyAppId "{{8F4C1A72-6B2E-4D91-9C33-0A11B17E0001}"
