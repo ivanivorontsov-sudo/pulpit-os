@@ -11,6 +11,7 @@ import customtkinter as ctk
 
 from pulpit import APP_NAME, __version__
 from pulpit.engines import converters, editors, office_bridge, units
+from pulpit.canvas_editor import CanvasEditor
 from pulpit.constructor_view import ConstructorView
 from pulpit.image_bench import ImageBench
 from pulpit.studio import SiteStudio
@@ -47,6 +48,7 @@ class PulpitApp(ctk.CTk):
             ("edit", "Редакторы"),
             ("site", "Редактор сайта"),
             ("constructor", "Конструктор"),
+            ("canvas", "Холст"),
             ("office", "Office"),
             ("units", "Единицы"),
             ("system", "Система"),
@@ -72,6 +74,7 @@ class PulpitApp(ctk.CTk):
             "edit": self._page_edit,
             "site": self._page_site,
             "constructor": self._page_constructor,
+            "canvas": self._page_canvas,
             "office": self._page_office,
             "units": self._page_units,
             "system": self._page_system,
@@ -95,7 +98,7 @@ class PulpitApp(ctk.CTk):
             "Единицы измерения и карточка системы."
         )
         ctk.CTkLabel(frame, text=text, justify="left", font=ctk.CTkFont(size=16)).pack(anchor="w", padx=24, pady=12)
-        ctk.CTkButton(frame, text="Открыть конструктор", command=lambda: self.show("constructor")).pack(anchor="w", padx=24, pady=8)
+        ctk.CTkButton(frame, text="Открыть холст", command=lambda: self.show("canvas")).pack(anchor="w", padx=24, pady=8)
         ctk.CTkButton(frame, text="Проверить Office", command=lambda: self.show("office")).pack(anchor="w", padx=24, pady=8)
 
     def _page_convert(self, frame: ctk.CTkFrame) -> None:
@@ -176,6 +179,9 @@ class PulpitApp(ctk.CTk):
         ctk.CTkButton(row, text="Статистика", command=stats).pack(side="left", padx=4)
         ctk.CTkButton(row, text="Markdown в HTML", command=preview).pack(side="left", padx=4)
         ctk.CTkButton(row, text="Ужать картинку", command=photo).pack(side="left", padx=4)
+
+    def _page_canvas(self, frame: ctk.CTkFrame) -> None:
+        CanvasEditor(frame)
 
     def _page_constructor(self, frame: ctk.CTkFrame) -> None:
         ConstructorView(frame)
