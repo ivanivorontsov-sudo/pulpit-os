@@ -8,33 +8,9 @@ from io import StringIO
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from PIL import Image
+from pulpit.engines.images import IMAGE_FORMATS, convert_image
 
-
-IMAGE_FORMATS = {
-    ".png": "PNG",
-    ".jpg": "JPEG",
-    ".jpeg": "JPEG",
-    ".webp": "WEBP",
-    ".bmp": "BMP",
-    ".gif": "GIF",
-    ".tif": "TIFF",
-    ".tiff": "TIFF",
-}
-
-
-def convert_image(src: str | Path, dest: str | Path, quality: int = 90) -> Path:
-    source = Path(src)
-    target = Path(dest)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    fmt = IMAGE_FORMATS.get(target.suffix.lower())
-    if not fmt:
-        raise ValueError(f"Неизвестный формат картинки: {target.suffix}")
-    with Image.open(source) as image:
-        frame = image.convert("RGB") if fmt in {"JPEG", "BMP"} else image
-        save_kwargs = {"quality": quality} if fmt in {"JPEG", "WEBP"} else {}
-        frame.save(target, format=fmt, **save_kwargs)
-    return target
+__all__ = ["convert_image", "IMAGE_FORMATS"]
 
 
 def json_to_csv(src: str | Path, dest: str | Path) -> Path:

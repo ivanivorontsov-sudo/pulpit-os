@@ -10,7 +10,9 @@ from tkinter import filedialog, messagebox
 import customtkinter as ctk
 
 from pulpit import APP_NAME, __version__
-from pulpit.engines import converters, editors, office_bridge, site_builder, units
+from pulpit.engines import converters, editors, office_bridge, units
+from pulpit.image_bench import ImageBench
+from pulpit.studio import SiteStudio
 
 
 ctk.set_appearance_mode("dark")
@@ -39,9 +41,10 @@ class PulpitApp(ctk.CTk):
         ctk.CTkLabel(side, text="мини-оболочка Windows 11", text_color="#c9b8a6").pack(anchor="w", padx=20, pady=(0, 20))
         for key, label in [
             ("home", "Обзор"),
-            ("convert", "Конвертеры"),
+            ("convert", "Картинки"),
+            ("data", "Данные"),
             ("edit", "Редакторы"),
-            ("site", "Сайт в zip"),
+            ("site", "Редактор сайта"),
             ("office", "Office"),
             ("units", "Единицы"),
             ("system", "Система"),
@@ -63,6 +66,7 @@ class PulpitApp(ctk.CTk):
         builders = {
             "home": self._page_home,
             "convert": self._page_convert,
+            "data": self._page_data,
             "edit": self._page_edit,
             "site": self._page_site,
             "office": self._page_office,
@@ -83,7 +87,7 @@ class PulpitApp(ctk.CTk):
         text = (
             "Конвертеры картинок, JSON и CSV.\n"
             "Редактор текста, markdown и простой фотоцех.\n"
-            "Сборщик локального сайта: папка + zip, интернет не нужен.\n"
+            "Интерактивный редактор сайта: страницы, блоки, картинки и zip.\n"
             "Мост к Microsoft Office: DOCX, XLSX, PPTX. Word, Excel и PowerPoint открывают как свои.\n"
             "Единицы измерения и карточка системы."
         )
@@ -92,45 +96,42 @@ class PulpitApp(ctk.CTk):
         ctk.CTkButton(frame, text="Проверить Office", command=lambda: self.show("office")).pack(anchor="w", padx=24, pady=8)
 
     def _page_convert(self, frame: ctk.CTkFrame) -> None:
-        self._title(frame, "Конвертеры", "Картинки, таблицы и архивы. Без облака и без очереди.")
-        box = ctk.CTkTextbox(frame, height=220)
-        box.pack(fill="both", expand=True, padx=24, pady=8)
-        box.insert("1.0", "Выбери действие. Результат появится здесь.")
+        ImageBench(frame)
 
-        def image() -> None:
-            src = filedialog.askopenfilename(filetypes=[("Картинки", "*.png *.jpg *.jpeg *.webp *.bmp *.gif")])
-            if not src:
-                return
-            dest = filedialog.asksaveasfilename(defaultextension=".webp", filetypes=[("WEBP", "*.webp"), ("PNG", "*.png"), ("JPEG", "*.jpg")])
-            if dest:
-                path = converters.convert_image(src, dest)
-                box.insert("end", f"\nКартинка: {path}")
+    def _page_data(self, frame: ctk.CTkFrame) -> None:
+        self._title(frame, "Данные и архивы", "JSON, CSV и zip. Картинки живут на соседней полке.")
+        box = ctk.CTkTextbox(frame, height=240)
+        box.pack(fill="both", expand=True, padx=24, pady=8)
 
         def table() -> None:
             src = filedialog.askopenfilename(filetypes=[("JSON или CSV", "*.json *.csv")])
             if not src:
                 return
             source = Path(src)
-            if source.suffix.lower() == ".json":
-                dest = filedialog.asksaveasfilename(defaultextension=".csv")
-                if dest:
-                    box.insert("end", f"\nCSV: {converters.json_to_csv(src, dest)}")
-            else:
-                dest = filedialog.asksaveasfilename(defaultextension=".json")
-                if dest:
-                    box.insert("end", f"\nJSON: {converters.csv_to_json(src, dest)}")
+            try:
+                if source.suffix.lower() == ".json":
+                    dest = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV", "*.csv")])
+                    path = converters.json_to_csv(src, dest) if dest else None
+                else:
+                    dest = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
+                    path = converters.csv_to_json(src, dest) if dest else None
+            except Exception as exc:  # noqa: BLE001
+                messagebox.showerror("Пульт", str(exc))
+                return
+            if path:
+                box.insert("end", f"\nСохранено: {path} · {path.stat().st_size} байт")
 
         def archive() -> None:
             folder = filedialog.askdirectory()
             if not folder:
                 return
-            dest = filedialog.asksaveasfilename(defaultextension=".zip")
+            dest = filedialog.asksaveasfilename(defaultextension=".zip", filetypes=[("ZIP", "*.zip")])
             if dest:
-                box.insert("end", f"\nZIP: {converters.pack_zip(folder, dest)}")
+                path = converters.pack_zip(folder, dest)
+                box.insert("end", f"\nZIP: {path} · {path.stat().st_size} байт")
 
         row = ctk.CTkFrame(frame, fg_color="transparent")
         row.pack(fill="x", padx=24, pady=8)
-        ctk.CTkButton(row, text="Картинка", command=image).pack(side="left", padx=4)
         ctk.CTkButton(row, text="JSON ↔ CSV", command=table).pack(side="left", padx=4)
         ctk.CTkButton(row, text="Папка в zip", command=archive).pack(side="left", padx=4)
 
@@ -158,9 +159,14 @@ class PulpitApp(ctk.CTk):
             if not src:
                 return
             dest = filedialog.asksaveasfilename(defaultextension=".png")
-            if dest:
-                editors.edit_image(src, dest, width=1280, grayscale=False, brightness=1.05)
-                status.configure(text=f"Картинка ужата до 1280 по ширине: {dest}")
+            if not dest:
+                return
+            try:
+                path = editors.edit_image(src, dest, width=1280)
+            except Exception as exc:  # noqa: BLE001
+                messagebox.showerror("Пульт", f"Картинка не сохранилась: {exc}")
+                return
+            status.configure(text=f"Сохранено {path.name}, {path.stat().st_size} байт")
 
         row = ctk.CTkFrame(frame, fg_color="transparent")
         row.pack(fill="x", padx=24, pady=8)
@@ -169,47 +175,7 @@ class PulpitApp(ctk.CTk):
         ctk.CTkButton(row, text="Ужать картинку", command=photo).pack(side="left", padx=4)
 
     def _page_site(self, frame: ctk.CTkFrame) -> None:
-        self._title(frame, "Мини-сайт в zip", "Открыл index.html — и всё. CDN может идти пить чай.")
-        title = ctk.CTkEntry(frame, placeholder_text="Название сайта")
-        title.pack(fill="x", padx=24, pady=4)
-        title.insert(0, "Локальная галерея")
-        tagline = ctk.CTkEntry(frame, placeholder_text="Подзаголовок")
-        tagline.pack(fill="x", padx=24, pady=4)
-        tagline.insert(0, "Картинки в zip, интернет опционален")
-        body = ctk.CTkTextbox(frame, height=180)
-        body.pack(fill="both", expand=True, padx=24, pady=8)
-        body.insert("1.0", "Это страница, которая живёт в папке.\nРаспаковал архив, открыл index.html, смотришь.")
-        images: list[str] = []
-        label = ctk.CTkLabel(frame, text="Картинок: 0")
-        label.pack(anchor="w", padx=24)
-
-        def add_images() -> None:
-            picked = filedialog.askopenfilenames(filetypes=[("Картинки", "*.png *.jpg *.jpeg *.webp *.gif")])
-            images.extend(picked)
-            label.configure(text=f"Картинок: {len(images)}")
-
-        def build() -> None:
-            folder = filedialog.askdirectory(title="Куда положить сайт")
-            if not folder:
-                return
-            pages = [
-                {"title": "Главная", "body": body.get("1.0", "end").strip()},
-                {"title": "Как открыть", "body": "1. Распаковать zip.\n2. Открыть index.html.\n3. Не ждать облако."},
-            ]
-            result = site_builder.build_site(
-                Path(folder) / "site",
-                title.get(),
-                tagline.get(),
-                "#c45c26",
-                pages,
-                images,
-            )
-            messagebox.showinfo("Сайт собран", f"Папка: {result['folder']}\nZIP: {result['zip']}")
-
-        row = ctk.CTkFrame(frame, fg_color="transparent")
-        row.pack(fill="x", padx=24, pady=8)
-        ctk.CTkButton(row, text="Добавить картинки", command=add_images).pack(side="left", padx=4)
-        ctk.CTkButton(row, text="Собрать zip", command=build).pack(side="left", padx=4)
+        SiteStudio(frame)
 
     def _page_office(self, frame: ctk.CTkFrame) -> None:
         self._title(frame, "Совместимость с Microsoft Office", "DOCX, XLSX, PPTX. Office не обязан быть установлен, чтобы файл родился.")

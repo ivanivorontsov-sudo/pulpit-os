@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from PIL import Image, ImageEnhance, ImageOps
+from pulpit.engines.images import edit_image
 
 
 def text_stats(text: str) -> dict[str, int]:
@@ -47,42 +47,8 @@ def markdown_to_html(text: str) -> str:
 
 
 def _inline(text: str) -> str:
-    safe = (
-        text.replace("&", "&")
-        .replace("<", "<")
-        .replace(">", ">")
-    )
+    safe = text.replace("&", "&").replace("<", "<").replace(">", ">")
     safe = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", safe)
     safe = re.sub(r"\*(.+?)\*", r"<em>\1</em>", safe)
     safe = re.sub(r"`(.+?)`", r"<code>\1</code>", safe)
     return safe
-
-
-def edit_image(
-    src: str | Path,
-    dest: str | Path,
-    width: int | None = None,
-    height: int | None = None,
-    rotate: int = 0,
-    grayscale: bool = False,
-    brightness: float = 1.0,
-) -> Path:
-    source = Path(src)
-    target = Path(dest)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    with Image.open(source) as image:
-        frame = image.convert("RGBA")
-        if rotate:
-            frame = frame.rotate(-rotate, expand=True)
-        if width or height:
-            w = width or int(frame.width * (height / frame.height))
-            h = height or int(frame.height * (width / frame.width))
-            frame = frame.resize((max(1, w), max(1, h)), Image.Resampling.LANCZOS)
-        if grayscale:
-            frame = ImageOps.grayscale(frame).convert("RGBA")
-        if brightness != 1.0:
-            frame = ImageEnhance.Brightness(frame).enhance(brightness)
-        if target.suffix.lower() in {".jpg", ".jpeg"}:
-            frame = frame.convert("RGB")
-        frame.save(target)
-    return target
