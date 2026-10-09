@@ -5,6 +5,7 @@ venv/
 dist/
 build/
 *.spec
+!pulpit.spec
 .idea/
 .vscode/
 exports/

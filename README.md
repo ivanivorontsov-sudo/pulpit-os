@@ -51,7 +51,13 @@ python examples/demo_office.py
 
 Это не макросы и не COM-автоматизация. Файл можно унести на другой компьютер, и Office откроет его без Пульта.
 
-## Структура
+## Установщик
+
+GitHub Actions на `windows-latest` собирает `Pulpit.exe` через PyInstaller и упаковывает его в `Pulpit-Setup.exe` через Inno Setup. Готовый файл лежит в артефактах прогона:
+
+https://github.com/ivanivorontsov-sudo/pulpit-os/actions
+
+На Windows 11 установщик кладёт Пульт в папку программ и делает ярлык. Office по-прежнему не обязателен, чтобы файлы родились.
 
 ```
 main.py
