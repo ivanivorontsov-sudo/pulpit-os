@@ -81,5 +81,8 @@ def test_constructor_template_undo_and_export(tmp_path: Path) -> None:
     html = (tmp_path / "site" / "index.html").read_text(encoding="utf-8")
     assert "features" in html
     assert Path(result["zip"]).stat().st_size > 32
+
+
+def test_units() -> None:
     assert abs(units.convert_temperature(0, "C", "F") - 32) < 0.01
     assert abs(units.convert_length(1, "м", "см") - 100) < 0.01
