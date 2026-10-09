@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
@@ -12,6 +11,7 @@ from PIL import Image
 from pulpit.engines.constructor import REGISTRY, Constructor
 from pulpit.engines.site_project import add_image, load_project, save_project
 from pulpit.engines.site_render import export_project, preview_html
+from pulpit.html_view import HtmlPane
 
 
 class CanvasEditor(ctk.CTkFrame):
@@ -37,8 +37,14 @@ class CanvasEditor(ctk.CTkFrame):
         ctk.CTkButton(bar, text="Кнопка", width=80, command=lambda: self.add("button")).pack(side="left", padx=2)
         ctk.CTkButton(bar, text="ZIP", width=60, command=self.export).pack(side="right", padx=4)
         ctk.CTkButton(bar, text="Просмотр", width=100, command=self.preview).pack(side="right", padx=4)
-        self.paper = ctk.CTkScrollableFrame(self, fg_color="#f4efe6", label_text="Страница")
-        self.paper.pack(fill="both", expand=True, padx=16, pady=8)
+        stage = ctk.CTkFrame(self, fg_color="transparent")
+        stage.pack(fill="both", expand=True, padx=12, pady=8)
+        stage.grid_columnconfigure((0, 1), weight=1)
+        stage.grid_rowconfigure(0, weight=1)
+        self.paper = ctk.CTkScrollableFrame(stage, fg_color="#f4efe6", label_text="Визуальный редактор")
+        self.paper.grid(row=0, column=0, sticky="nsew", padx=4)
+        self.preview = HtmlPane(stage)
+        self.preview.grid(row=0, column=1, sticky="nsew", padx=4)
         self.status = ctk.CTkLabel(self, text="Ткни блок. Ручка ⋮⋮ таскает. Текст пишется прямо в карточке.")
         self.status.pack(anchor="w", padx=16, pady=(0, 8))
 
@@ -53,6 +59,12 @@ class CanvasEditor(ctk.CTkFrame):
         self._cards = []
         for block in self.doc.page()["blocks"]:
             self._cards.append(self._card(block))
+        self.render_html()
+
+    def render_html(self) -> None:
+        target = self.folder / "preview.html"
+        target.write_text(preview_html(self.doc.project, self.doc.page_index, self.folder, embedded=True), encoding="utf-8")
+        self.preview.show_file(target)
 
     def _card(self, block: dict) -> ctk.CTkFrame:
         selected = block["id"] == self.doc.selected
@@ -180,9 +192,8 @@ class CanvasEditor(ctk.CTkFrame):
 
     def preview(self) -> None:
         save_project(self.folder, self.doc.project)
-        target = self.folder / "preview.html"
-        target.write_text(preview_html(self.doc.project, self.doc.page_index, self.folder), encoding="utf-8")
-        webbrowser.open(target.resolve().as_uri())
+        self.render_html()
+        self.status.configure(text="HTML уже в правом окне, браузер не вызывали.")
 
     def export(self) -> None:
         save_project(self.folder, self.doc.project)

@@ -34,14 +34,14 @@ def export_project(folder: str | Path, dest_dir: str | Path) -> dict[str, str]:
     return {"folder": str(out), "zip": str(archive), "images": str(len(copied))}
 
 
-def preview_html(project: dict, page_index: int, asset_root: str | Path) -> str:
+def preview_html(project: dict, page_index: int, asset_root: str | Path, embedded: bool = False) -> str:
     pages = project.get("pages") or []
     page = pages[page_index] if pages else {"title": "Пусто", "blocks": []}
     nav = "\n".join(
         f'<a href="#page-{index}">{html.escape(item.get("title") or "")}</a>'
         for index, item in enumerate(pages)
     )
-    body = _blocks(page.get("blocks") or [], Path(asset_root), preview=True)
+    body = _blocks(page.get("blocks") or [], Path(asset_root), preview="embed" if embedded else "file")
     return _shell(project, nav, page.get("title") or "Страница", body)
 
 
@@ -90,19 +90,20 @@ def _shell(project: dict, nav: str, heading: str, body: str) -> str:
 """
 
 
-def _blocks(blocks: list[dict], asset_root: Path, preview: bool) -> str:
+def _blocks(blocks: list[dict], asset_root: Path, preview: str | bool) -> str:
     chunks = []
     for block in blocks:
         kind = block.get("type")
         text = html.escape(block.get("text") or "")
         sub = html.escape(block.get("sub") or "")
+        anchor = f' id="block-{html.escape(str(block.get("id") or ""))}"'
         if kind == "hero":
-            chunks.append(f'<section class="hero"><h3>{text}</h3><p>{sub}</p></section>')
+            chunks.append(f'<section class="hero"{anchor}><h3>{text}</h3><p>{sub}</p></section>')
         elif kind == "heading":
-            chunks.append(f"<h3>{text}</h3>")
+            chunks.append(f"<h3{anchor}>{text}</h3>")
         elif kind == "features":
             items = "".join(f"<li>{html.escape(part.strip())}</li>" for part in (block.get("text") or "").split("|") if part.strip())
-            chunks.append(f'<ul class="features">{items}</ul>')
+            chunks.append(f'<ul class="features"{anchor}>{items}</ul>')
         elif kind == "cards":
             titles = [part.strip() for part in (block.get("text") or "").split("|")]
             notes = [part.strip() for part in (block.get("sub") or "").split("|")]
@@ -110,21 +111,21 @@ def _blocks(blocks: list[dict], asset_root: Path, preview: bool) -> str:
                 f"<article><h3>{html.escape(title)}</h3><p>{html.escape(notes[i] if i < len(notes) else '')}</p></article>"
                 for i, title in enumerate(titles) if title
             )
-            chunks.append(f'<section class="cards">{cards}</section>')
+            chunks.append(f'<section class="cards"{anchor}>{cards}</section>')
         elif kind == "faq":
             rows = []
             for line in (block.get("text") or "").splitlines():
                 question, _, answer = line.partition("|")
                 if question.strip():
                     rows.append(f"<details><summary>{html.escape(question.strip())}</summary><p>{html.escape(answer.strip())}</p></details>")
-            chunks.append('<section class="faq">' + "".join(rows) + "</section>")
+            chunks.append(f'<section class="faq"{anchor}>' + "".join(rows) + "</section>")
         elif kind == "spacer":
             size = "".join(ch for ch in str(block.get("text") or "32") if ch.isdigit()) or "32"
-            chunks.append(f'<div style="height:{size}px"></div>')
+            chunks.append(f'<div{anchor} style="height:{size}px"></div>')
         elif kind == "footer":
-            chunks.append(f'<p class="foot">{text}</p>')
+            chunks.append(f'<p class="foot"{anchor}>{text}</p>')
         elif kind == "quote":
-            chunks.append(f"<blockquote>{text}</blockquote>")
+            chunks.append(f"<blockquote{anchor}>{text}</blockquote>")
         elif kind == "button":
             href = html.escape(block.get("href") or "#")
             style = html.escape(str(block.get("style") or "fill"))
@@ -132,29 +133,34 @@ def _blocks(blocks: list[dict], asset_root: Path, preview: bool) -> str:
             shape = html.escape(str(block.get("shape") or "square"))
             color = html.escape(str(block.get("color") or "#c45c26"))
             chunks.append(
-                f'<p><a class="button {style} {size} {shape}" style="--btn:{color}" href="{href}">{text}</a></p>'
+                f'<p{anchor}><a class="button {style} {size} {shape}" style="--btn:{color}" href="{href}">{text}</a></p>'
             )
         elif kind == "columns":
-            chunks.append(f'<section class="cols"><p>{text}</p><p>{sub}</p></section>')
+            chunks.append(f'<section class="cols"{anchor}><p>{text}</p><p>{sub}</p></section>')
         elif kind == "image":
-            chunks.append(_image(block.get("image") or "", text, asset_root, preview))
+            chunks.append(_image(block.get("image") or "", text, asset_root, preview, anchor))
         elif kind == "gallery":
             figures = "\n".join(
-                _image(name, "", asset_root, preview) for name in block.get("images") or []
+                _image(name, "", asset_root, preview, "") for name in block.get("images") or []
             )
-            chunks.append(f'<section class="gallery"><h3>{text}</h3>{figures}</section>')
+            chunks.append(f'<section class="gallery"{anchor}><h3>{text}</h3>{figures}</section>')
         else:
-            chunks.append(f"<p>{text}</p>")
+            chunks.append(f"<p{anchor}>{text}</p>")
     return "\n".join(chunks) or "<p>На странице ещё нет блоков.</p>"
 
 
-def _image(rel: str, caption: str, asset_root: Path, preview: bool) -> str:
+def _image(rel: str, caption: str, asset_root: Path, preview: str | bool, anchor: str = "") -> str:
     name = Path(rel).name
     if not name:
-        return "<p class='missing'>Картинка не выбрана</p>"
-    src = (asset_root / "assets" / name).resolve().as_uri() if preview else f"images/{html.escape(name)}"
+        return f"<p class='missing'{anchor}>Картинка не выбрана</p>"
+    if preview in {True, "file"}:
+        src = (asset_root / "assets" / name).resolve().as_uri()
+    elif preview == "embed":
+        src = f"assets/{html.escape(name)}"
+    else:
+        src = f"images/{html.escape(name)}"
     cap = f"<figcaption>{caption}</figcaption>" if caption else ""
-    return f'<figure><img src="{src}" alt="{caption or name}">{cap}</figure>'
+    return f'<figure{anchor}><img src="{src}" alt="{caption or name}">{cap}</figure>'
 
 
 def _page_href(index: int) -> str:

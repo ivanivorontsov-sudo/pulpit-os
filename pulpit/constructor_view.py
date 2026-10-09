@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import webbrowser
+from pulpit.html_view import HtmlPane
 from pathlib import Path
 from tkinter import filedialog, messagebox
 
@@ -41,12 +41,15 @@ class ConstructorView(ctk.CTkFrame):
         body.pack(fill="both", expand=True, padx=8, pady=8)
         body.grid_columnconfigure(1, weight=1)
         body.grid_rowconfigure(0, weight=1)
+        body.grid_columnconfigure(3, weight=1)
         self.palette = ctk.CTkScrollableFrame(body, width=170, label_text="Палитра")
         self.palette.grid(row=0, column=0, sticky="nsew", padx=4)
         self.layers = ctk.CTkScrollableFrame(body, label_text="Слои")
         self.layers.grid(row=0, column=1, sticky="nsew", padx=4)
         self.inspector = ctk.CTkScrollableFrame(body, width=250, label_text="Свойства")
         self.inspector.grid(row=0, column=2, sticky="nsew", padx=4)
+        self.preview = HtmlPane(body)
+        self.preview.grid(row=0, column=3, sticky="nsew", padx=4)
         for kind, spec in REGISTRY.items():
             button = ctk.CTkButton(self.palette, text=spec["label"])
             button.pack(fill="x", pady=3)
@@ -149,6 +152,12 @@ class ConstructorView(ctk.CTkFrame):
             ctk.CTkButton(self.inspector, text="Дублировать", command=self.duplicate).pack(fill="x", padx=8, pady=4)
             ctk.CTkButton(self.inspector, text="Удалить", command=self.remove).pack(fill="x", padx=8, pady=4)
         self.status.configure(text=f"{len(self.doc.page()['blocks'])} блоков · {self.folder}")
+        self.render_html()
+
+    def render_html(self) -> None:
+        target = self.folder / "preview.html"
+        target.write_text(preview_html(self.doc.project, self.doc.page_index, self.folder, embedded=True), encoding="utf-8")
+        self.preview.show_file(target)
 
     def _bind_palette(self, widget, kind: str) -> None:
         widget.bind("<ButtonPress-1>", lambda _event, name=kind: self._palette_start(name))
@@ -259,9 +268,7 @@ class ConstructorView(ctk.CTkFrame):
 
     def preview(self) -> None:
         self.apply_fields()
-        target = self.folder / "preview.html"
-        target.write_text(preview_html(self.doc.project, self.doc.page_index, self.folder), encoding="utf-8")
-        webbrowser.open(target.resolve().as_uri())
+        self.render_html()
 
     def export(self) -> None:
         self.apply_fields()

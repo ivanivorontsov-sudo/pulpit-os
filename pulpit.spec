@@ -7,7 +7,7 @@ datas = []
 binaries = []
 hiddenimports = ["pulpit", "pulpit.shell", "pulpit.engines"]
 
-for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx"):
+for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb"):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
     datas += pkg_datas
     binaries += pkg_binaries
