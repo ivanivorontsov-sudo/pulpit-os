@@ -39,12 +39,23 @@ class CanvasEditor(ctk.CTkFrame):
         ctk.CTkButton(bar, text="Просмотр", width=100, command=self.preview).pack(side="right", padx=4)
         stage = ctk.CTkFrame(self, fg_color="transparent")
         stage.pack(fill="both", expand=True, padx=12, pady=8)
-        stage.grid_columnconfigure((0, 1), weight=1)
+        stage.grid_columnconfigure(1, weight=1)
+        stage.grid_columnconfigure(2, weight=1)
         stage.grid_rowconfigure(0, weight=1)
+        self.palette = ctk.CTkScrollableFrame(stage, width=150, label_text="Тащи на холст")
+        self.palette.grid(row=0, column=0, sticky="nsew", padx=4)
+        for kind, spec in REGISTRY.items():
+            item = ctk.CTkButton(self.palette, text=spec["label"], cursor="fleur")
+            item.pack(fill="x", pady=3)
+            item.bind("<ButtonPress-1>", lambda _event, name=kind: self._palette_start(name))
+            item.bind("<B1-Motion>", self._drag_motion)
+            item.bind("<ButtonRelease-1>", self._palette_drop)
         self.paper = ctk.CTkScrollableFrame(stage, fg_color="#f4efe6", label_text="Визуальный редактор")
-        self.paper.grid(row=0, column=0, sticky="nsew", padx=4)
+        self.paper.grid(row=0, column=1, sticky="nsew", padx=4)
         self.preview = HtmlPane(stage)
-        self.preview.grid(row=0, column=1, sticky="nsew", padx=4)
+        self.preview.grid(row=0, column=2, sticky="nsew", padx=4)
+        self.placeholder = None
+        self._drag_kind: str | None = None
         self.status = ctk.CTkLabel(self, text="Ткни блок. Ручка ⋮⋮ таскает. Текст пишется прямо в карточке.")
         self.status.pack(anchor="w", padx=16, pady=(0, 8))
 
@@ -72,11 +83,12 @@ class CanvasEditor(ctk.CTkFrame):
         card.pack(fill="x", padx=18, pady=8)
         head = ctk.CTkFrame(card, fg_color="transparent")
         head.pack(fill="x", padx=8, pady=4)
-        handle = ctk.CTkLabel(head, text="⋮⋮", width=28, cursor="fleur", text_color="#1c140f")
+        handle = ctk.CTkLabel(head, text="⋮⋮ тащи", width=70, cursor="fleur", text_color="#1c140f")
         handle.pack(side="left")
         ctk.CTkLabel(head, text=REGISTRY.get(block["type"], {}).get("label", block["type"]), text_color="#8a7362").pack(side="left")
         ctk.CTkButton(head, text="убрать", width=70, command=lambda item=block["id"]: self.remove(item)).pack(side="right")
         self._bind_drag(handle, block["id"])
+        self._bind_drag(card, block["id"])
         self._body(card, block)
         card.bind("<Button-1>", lambda _event, item=block["id"]: self.select(item))
         return card
@@ -144,15 +156,55 @@ class CanvasEditor(ctk.CTkFrame):
         self.doc.selected = block_id
 
     def _drag_motion(self, event) -> None:
-        if self._drag_id:
-            self.status.configure(text=f"Тащу на место {self._index_at(event.y_root) + 1}")
+        if not self._drag_id and not self._drag_kind:
+            return
+        index = self._index_at(event.y_root)
+        self._show_placeholder(index)
+        label = REGISTRY.get(self._drag_kind or "", {}).get("label", "блок")
+        self.status.configure(text=f"Отпусти — {label} встанет на место {index + 1}")
 
     def _drag_drop(self, event) -> None:
         if not self._drag_id:
             return
-        self.doc.move_to(self._drag_id, self._index_at(event.y_root))
+        index = self._index_at(event.y_root)
+        self.doc.move_to(self._drag_id, index)
         self._drag_id = None
+        self._clear_placeholder()
         self._persist()
+
+    def _palette_start(self, kind: str) -> None:
+        self._drag_kind = kind
+        self._drag_id = None
+
+    def _palette_drop(self, event) -> None:
+        kind = self._drag_kind
+        self._drag_kind = None
+        self._clear_placeholder()
+        if not kind:
+            return
+        if self._over_paper(event.y_root):
+            self.doc.insert_at(kind, self._index_at(event.y_root))
+        else:
+            self.doc.add(kind)
+        self._persist()
+
+    def _over_paper(self, y_root: int) -> bool:
+        top = self.paper.winfo_rooty()
+        return top <= y_root <= top + max(self.paper.winfo_height(), 40)
+
+    def _show_placeholder(self, index: int) -> None:
+        if self.placeholder is None:
+            self.placeholder = ctk.CTkFrame(self.paper, height=28, fg_color="#c45c26")
+        self.placeholder.pack_forget()
+        cards = [card for card in self._cards if card.winfo_exists()]
+        if not cards or index >= len(cards):
+            self.placeholder.pack(fill="x", padx=18, pady=4)
+        else:
+            self.placeholder.pack(fill="x", padx=18, pady=4, before=cards[index])
+
+    def _clear_placeholder(self) -> None:
+        if self.placeholder is not None:
+            self.placeholder.pack_forget()
 
     def _index_at(self, y_root: int) -> int:
         if not self._cards:
