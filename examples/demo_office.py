@@ -1,6 +1,9 @@
 """Собирает три файла Office и локальный сайт, чтобы показать совместимость без кликов."""
 
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pulpit.engines import office_bridge, site_builder
 

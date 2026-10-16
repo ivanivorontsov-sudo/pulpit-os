@@ -1,7 +1,7 @@
 ; Установщик Пульта. Собирает папку PyInstaller в один Setup.exe.
 
 #define MyAppName "Пульт"
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.7.1"
 #define MyAppPublisher "ivanivorontsov-sudo"
 #define MyAppExeName "Pulpit.exe"
 #define MyAppId "{{8F4C1A72-6B2E-4D91-9C33-0A11B17E0001}"
@@ -36,6 +36,8 @@ Name: "desktopicon"; Description: "Ярлык на рабочем столе"; G
 
 [Files]
 Source: "..\dist\Pulpit\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Пульт"; Filename: "{app}\{#MyAppExeName}"
