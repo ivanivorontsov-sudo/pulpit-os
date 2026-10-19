@@ -75,3 +75,7 @@ tests/test_engines.py
 © 2026 Иван Воронцов. Все права защищены, см. LICENSE. Сторонние компоненты перечислены в THIRD_PARTY_NOTICES.md.
 
 Microsoft, Windows, Word, Excel, PowerPoint и Office являются товарными знаками Microsoft Corporation. Пульт с Microsoft не связан. Названия указаны только для описания совместимости.
+
+## Автор
+
+Иван Воронцов: https://ivanivorontsov-sudo.github.io/vizitka/
