@@ -490,8 +490,12 @@ class OfficeWorkbench(ctk.CTkFrame):
         ]:
             ctk.CTkButton(row, text=label, width=130, command=action).pack(side="left", padx=3)
 
-        left = ctk.CTkFrame(tab, width=220, fg_color="#2b211a", corner_radius=8)
-        left.grid(row=1, column=0, sticky="nsew", padx=(8, 4), pady=5)
+        workarea = ctk.CTkFrame(tab, fg_color="transparent")
+        workarea.pack(fill="both", expand=True, padx=8, pady=5)
+        workarea.grid_columnconfigure(1, weight=1)
+        workarea.grid_rowconfigure(0, weight=1)
+        left = ctk.CTkFrame(workarea, width=220, fg_color="#2b211a", corner_radius=8)
+        left.grid(row=0, column=0, sticky="nsew", padx=(0, 4))
         left.grid_propagate(False)
         ctk.CTkLabel(left, text="Слайды", font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", padx=10, pady=8)
         self.ppt_listbox = tk.Listbox(
@@ -509,8 +513,8 @@ class OfficeWorkbench(ctk.CTkFrame):
         ]:
             ctk.CTkButton(buttons, text=label, width=48, command=action).pack(side="left", padx=2)
 
-        editor = ctk.CTkFrame(tab, fg_color="transparent")
-        editor.grid(row=1, column=1, sticky="nsew", padx=(4, 8), pady=5)
+        editor = ctk.CTkFrame(workarea, fg_color="transparent")
+        editor.grid(row=0, column=1, sticky="nsew", padx=(4, 0))
         editor.grid_columnconfigure(0, weight=1)
         editor.grid_rowconfigure(2, weight=1)
         ctk.CTkLabel(editor, text="Заголовок слайда", anchor="w").grid(row=0, column=0, sticky="ew", pady=(4, 2))

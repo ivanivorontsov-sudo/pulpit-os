@@ -67,6 +67,7 @@ def test_excel_csv_import_export_and_value_parsing(tmp_path: Path) -> None:
     assert imported_sheet == "import"
     assert book[imported_sheet]["B2"].value == 12
     assert office_suite.parse_cell_value("1,25") == 1.25
+    assert office_suite.parse_cell_value("00125") == "00125"
     assert office_suite.parse_cell_value("=SUM(A1:A3)") == "=SUM(A1:A3)"
     exported = office_suite.export_excel_sheet_csv(book, imported_sheet, tmp_path / "roundtrip.csv")
     with exported.open("r", encoding="utf-8-sig", newline="") as handle:
@@ -101,4 +102,4 @@ def test_powerpoint_roundtrip(tmp_path: Path) -> None:
     slides = office_suite.read_presentation(path)
     assert any(slide["title"] == "Первый слайд" for slide in slides)
     assert any("Главная мысль" in slide["body"] for slide in slides)
-    assert len(slides) >= 3
+    assert len(slides) == 2

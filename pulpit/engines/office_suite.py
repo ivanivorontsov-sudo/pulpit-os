@@ -350,6 +350,8 @@ def parse_cell_value(value: Any) -> Any:
     if lowered in {"false", "ложь"}:
         return False
     normalized = raw.replace(" ", "").replace(",", ".")
+    if re.fullmatch(r"0\d+", normalized):
+        return raw
     if re.fullmatch(r"[+-]?\d+", normalized):
         try:
             return int(normalized)
@@ -587,7 +589,7 @@ def read_presentation(path: str | Path) -> list[dict[str, str]]:
                 body_parts.append(value)
         if title or body_parts:
             slides.append({"title": title or f"Слайд {len(slides) + 1}", "body": "\n".join(body_parts)})
-    if slides and slides[0]["title"] == "Презентация Пульта" and not slides[0]["body"]:
+    if slides and slides[0]["body"].strip() == "Создано в Пульте":
         slides = slides[1:]
     return slides
 
@@ -623,7 +625,11 @@ def convert_with_libreoffice(
     output_dir: str | Path | None = None,
     timeout: int = 180,
 ) -> Path:
-    """Конвертирует документы LibreOffice в PDF, Open XML или открытые форматы."""
+    """Конвертирует документы LibreOffice в PDF, Open XML или открытые форматы.
+
+    Результат сначала создаётся во временной папке, чтобы случайно не затереть
+    исходник или предыдущую конвертацию с таким же именем.
+    """
     source_path = Path(source).expanduser().resolve()
     if not source_path.is_file():
         raise FileNotFoundError(source_path)
@@ -636,23 +642,31 @@ def convert_with_libreoffice(
         raise ValueError(f"Неподдерживаемый формат экспорта: {fmt}")
     destination = Path(output_dir).expanduser().resolve() if output_dir else source_path.parent
     destination.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="pulpit-lo-profile-") as profile_dir:
-        profile_uri = Path(profile_dir).resolve().as_uri()
-        command = [
-            binary, "--headless", "--nologo", "--nodefault", "--nolockcheck",
-            f"-env:UserInstallation={profile_uri}",
-            "--convert-to", fmt, "--outdir", str(destination), str(source_path),
-        ]
-        try:
-            result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
-        except subprocess.TimeoutExpired as exc:
-            raise RuntimeError(f"LibreOffice не завершил конвертацию за {timeout} секунд.") from exc
-    output = destination / f"{source_path.stem}.{fmt}"
-    if result.returncode != 0 or not output.is_file():
-        details = (result.stderr or result.stdout or "Нет подробностей от LibreOffice").strip()
-        raise RuntimeError(f"LibreOffice не смог создать файл {output.name}: {details}")
-    return output
-
+    with tempfile.TemporaryDirectory(prefix="pulpit-lo-output-") as staging_dir:
+        with tempfile.TemporaryDirectory(prefix="pulpit-lo-profile-") as profile_dir:
+            profile_uri = Path(profile_dir).resolve().as_uri()
+            command = [
+                binary, "--headless", "--nologo", "--nodefault", "--nolockcheck",
+                f"-env:UserInstallation={profile_uri}",
+                "--convert-to", fmt, "--outdir", staging_dir, str(source_path),
+            ]
+            try:
+                result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
+            except subprocess.TimeoutExpired as exc:
+                raise RuntimeError(f"LibreOffice не завершил конвертацию за {timeout} секунд.") from exc
+        staged = Path(staging_dir) / f"{source_path.stem}.{fmt}"
+        if result.returncode != 0 or not staged.is_file():
+            details = (result.stderr or result.stdout or "Нет подробностей от LibreOffice").strip()
+            raise RuntimeError(f"LibreOffice не смог создать файл {source_path.stem}.{fmt}: {details}")
+        target = destination / staged.name
+        if target.resolve() == source_path:
+            raise ValueError("Нельзя конвертировать файл в тот же формат поверх исходника.")
+        counter = 1
+        while target.exists():
+            target = destination / f"{source_path.stem}_converted_{counter}.{fmt}"
+            counter += 1
+        shutil.move(str(staged), str(target))
+    return target
 
 def open_with_associated_app(path: str | Path) -> str:
     target = Path(path).expanduser().resolve()
