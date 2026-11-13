@@ -1,5 +1,5 @@
 """Пульт — мини-оболочка поверх Windows 11."""
 
-__version__ = "1.7.1"
+__version__ = "1.8.0"
 APP_NAME = "Пульт"
 APP_ID = "ivanivorontsov.pulpit.os"
