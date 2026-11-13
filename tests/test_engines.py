@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
