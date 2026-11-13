@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Пульт — визуальный конструктор</title>
+  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/grapesjs@0.23.9/dist/css/grapes.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/grapesjs@0.23.9/dist/grapes.min.js" onerror="window.PULPIT_GRAPES_UNAVAILABLE=true"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div id="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Пульт">
+        <span class="brand-mark">П</span>
+        <span><b>ПУЛЬТ</b><small>СТУДИЯ САЙТОВ</small></span>
+      </a>
+      <div class="project-title-wrap">
+        <label for="project-title">Проект</label>
+        <input id="project-title" value="Мой сайт" maxlength="120" aria-label="Название проекта">
+        <span id="dirty-indicator" class="save-state" aria-live="polite">Локальный проект</span>
+      </div>
+      <div class="toolbar">
+        <button class="tool-btn" id="btn-open" title="Открыть проект">Открыть</button>
+        <button class="tool-btn" id="btn-save" title="Сохранить проект (Ctrl+S)">Сохранить</button>
+        <button class="tool-btn" id="btn-save-as" title="Сохранить проект в другой файл">Сохранить как</button>
+        <span class="toolbar-divider"></span>
+        <button class="tool-btn" id="btn-undo" title="Отменить (Ctrl+Z)">↶</button>
+        <button class="tool-btn" id="btn-redo" title="Повторить (Ctrl+Y)">↷</button>
+        <button class="tool-btn" id="btn-code">HTML / CSS</button>
+        <button class="tool-btn primary" id="btn-export">Экспорт ZIP ↗</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="left-panel panel">
+        <div class="panel-heading">
+          <div><span class="eyebrow">БИБЛИОТЕКА</span><h2>Элементы</h2></div>
+          <button class="icon-btn" id="btn-templates" title="Готовые шаблоны">▦</button>
+        </div>
+        <div class="left-tabs" role="tablist" aria-label="Панели конструктора">
+          <button class="tab active" data-left-tab="blocks" role="tab" aria-selected="true">Блоки</button>
+          <button class="tab" data-left-tab="layers" role="tab" aria-selected="false">Слои</button>
+          <button class="tab" data-left-tab="media" role="tab" aria-selected="false">Медиа</button>
+        </div>
+        <section id="left-blocks" class="left-content active">
+          <div class="panel-note">Перетащите блок на страницу или нажмите на него, чтобы добавить в конец.</div>
+          <div id="blocks"></div>
+          <div id="fallback-blocks" class="fallback-blocks"></div>
+        </section>
+        <section id="left-layers" class="left-content">
+          <p class="panel-note">Структура выбранной страницы. Выберите элемент, чтобы редактировать его.</p>
+          <div id="layers"></div>
+        </section>
+        <section id="left-media" class="left-content">
+          <div class="media-actions">
+            <button class="wide-btn primary" id="btn-add-media">＋ Добавить изображения</button>
+            <button class="wide-btn" id="btn-open-assets">Открыть медиатеку</button>
+            <input id="file-assets" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" multiple hidden>
+          </div>
+          <p class="panel-note">Файлы копируются в папку проекта. Картинки не отправляются в облако.</p>
+          <div id="media-list" class="media-list"></div>
+        </section>
+        <div class="panel-footer"><span class="local-dot"></span> Файлы остаются на устройстве</div>
+      </aside>
+
+      <section class="center-panel">
+        <div class="canvas-toolbar">
+          <div class="page-tools">
+            <label for="page-select">Страница</label>
+            <select id="page-select" aria-label="Текущая страница"></select>
+            <button class="mini-btn" id="btn-add-page" title="Добавить страницу">＋</button>
+            <button class="mini-btn" id="btn-rename-page" title="Переименовать страницу">✎</button>
+            <button class="mini-btn danger-hover" id="btn-delete-page" title="Удалить страницу">×</button>
+          </div>
+          <div class="viewport-tools" aria-label="Размер предпросмотра">
+            <button class="device-btn active" data-device="Desktop" title="Компьютер">▣</button>
+            <button class="device-btn" data-device="Tablet" title="Планшет">▤</button>
+            <button class="device-btn" data-device="Mobile" title="Телефон">▯</button>
+            <span id="viewport-label">100%</span>
+          </div>
+          <div class="canvas-actions">
+            <button class="mini-btn" id="btn-preview" title="Режим просмотра">▷</button>
+            <button class="mini-btn" id="btn-audit" title="SEO и доступность">✓</button>
+          </div>
+        </div>
+        <div id="canvas-stage">
+          <div id="gjs"></div>
+          <iframe id="fallback-frame" title="Предпросмотр страницы" hidden></iframe>
+          <div id="loading" class="loading">
+            <div class="loader"></div>
+            <strong>Подготавливаем студию</strong>
+            <span>Загружаем конструктор страниц…</span>
+          </div>
+        </div>
+        <div class="bottom-status">
+          <span id="selection-status">Ничего не выбрано</span>
+          <span id="editor-mode">Визуальный режим</span>
+          <span id="save-status" aria-live="polite">Автосохранение включено</span>
+        </div>
+      </section>
+
+      <aside class="right-panel panel">
+        <div class="panel-heading">
+          <div><span class="eyebrow">НАСТРОЙКА</span><h2>Свойства</h2></div>
+          <button class="icon-btn" id="btn-deselect" title="Снять выделение">⌖</button>
+        </div>
+        <div class="right-tabs" role="tablist" aria-label="Настройки выбранного объекта">
+          <button class="tab active" data-right-tab="styles" role="tab" aria-selected="true">Дизайн</button>
+          <button class="tab" data-right-tab="traits" role="tab" aria-selected="false">Свойства</button>
+          <button class="tab" data-right-tab="seo" role="tab" aria-selected="false">SEO</button>
+        </div>
+        <section id="right-styles" class="right-content active">
+          <p class="panel-note">Выберите блок на холсте, чтобы менять его цвета, размеры, отступы, шрифты и границы.</p>
+          <div id="styles"></div>
+        </section>
+        <section id="right-traits" class="right-content">
+          <p class="panel-note">Текст, ссылки, изображения, атрибуты и действия выбранного элемента.</p>
+          <div id="traits"></div>
+          <div id="fallback-properties" class="fallback-properties"></div>
+        </section>
+        <section id="right-seo" class="right-content">
+          <div class="field-group">
+            <label for="seo-title">Заголовок страницы</label>
+            <input id="seo-title" maxlength="160" placeholder="Название страницы">
+          </div>
+          <div class="field-group">
+            <label for="seo-description">Описание для поисковиков</label>
+            <textarea id="seo-description" rows="4" maxlength="320" placeholder="Кратко опишите содержание страницы"></textarea>
+            <small id="description-count">0 / 320</small>
+          </div>
+          <div class="field-group">
+            <label for="seo-slug">Адрес страницы</label>
+            <input id="seo-slug" maxlength="72" placeholder="glavnaya">
+          </div>
+          <div class="field-group">
+            <label for="site-language">Язык сайта</label>
+            <select id="site-language">
+              <option value="ru">Русский</option><option value="en">English</option><option value="uk">Українська</option><option value="de">Deutsch</option><option value="fr">Français</option>
+            </select>
+          </div>
+          <div class="seo-actions">
+            <button class="wide-btn primary" id="btn-page-audit">Проверить эту страницу</button>
+            <div id="seo-result" class="audit-result">Проверка анализирует заголовки, описание, ссылки, изображения и семантическую разметку.</div>
+          </div>
+        </section>
+        <div class="panel-footer"><span id="component-type">Выберите элемент</span><button class="text-btn" id="btn-delete-component">Удалить элемент</button></div>
+      </aside>
+    </main>
+  </div>
+
+  <input id="file-project" type="file" accept="application/json,.json" hidden>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head"><div><span class="eyebrow" id="modal-eyebrow">ПУЛЬТ</span><h2 id="modal-title">Окно редактора</h2></div><button class="icon-btn" id="modal-close" aria-label="Закрыть">×</button></div>
+      <div id="modal-body"></div>
+      <div class="modal-foot" id="modal-foot"></div>
+    </section>
+  </div>
+</body>
+</html>
