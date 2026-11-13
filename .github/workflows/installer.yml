@@ -45,12 +45,37 @@ jobs:
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\pulpit.iss
 
       - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || 'v1.12.0' }}
+          target_commitish: main
+          name: Pulpit 1.12.0
+          body: |
+            ## Pulpit 1.12.0
+            - Универсальный инфракрасный пульт: Broadlink RM/RM4, ESP32 USB-IR и Home Assistant.
+            - Обучение с оригинального пульта, профили устройств, импорт Flipper .ir и Pronto HEX.
+            - Сборка установщика Windows после полного прогона тестов.
           files: dist/installer/Pulpit-Setup.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove superseded releases
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $keep = "v1.12.0"
+          $releases = gh release list --limit 100 --json tagName | ConvertFrom-Json
+          foreach ($release in $releases) {
+            if ($release.tagName -ne $keep) {
+              gh release delete $release.tagName --yes --cleanup-tag
+              if ($LASTEXITCODE -ne 0) {
+                throw "Не удалось удалить старый релиз $($release.tagName)"
+              }
+            }
+          }
 
       - name: Upload installer
         continue-on-error: true
