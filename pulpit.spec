@@ -7,6 +7,7 @@ datas = []
 binaries = []
 hiddenimports = [
     "pulpit", "pulpit.shell", "pulpit.data_center", "pulpit.text_workbench",
+    "pulpit.office_workbench", "pulpit.engines.office_suite",
     "pulpit.system_info", "pulpit.engines", "pulpit.builder_app",
     "webview", "webview.platforms.edgechromium", "webview.platforms.winforms",
     "pythonnet", "clr_loader", "psutil",

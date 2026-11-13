@@ -11,7 +11,8 @@ import customtkinter as ctk
 
 from pulpit import APP_NAME, __version__
 from pulpit.data_center import DataCenter
-from pulpit.engines import office_bridge, units
+from pulpit.engines import units
+from pulpit.office_workbench import OfficeWorkbench
 from pulpit.image_bench import ImageBench
 from pulpit.live_builder import LiveBuilder
 from pulpit.constructor_view import ConstructorView
@@ -111,93 +112,7 @@ class PulpitApp(ctk.CTk):
         ConstructorView(frame)
 
     def _page_office(self, frame: ctk.CTkFrame) -> None:
-        self._title(frame, "Документы Office", "Создавай, читай и передавай документы Word, Excel и PowerPoint.")
-        title = ctk.CTkEntry(frame, placeholder_text="Название документа")
-        title.pack(fill="x", padx=24, pady=5)
-        title.insert(0, "Документ Пульта")
-        body = ctk.CTkTextbox(frame, height=330, font=ctk.CTkFont(size=14))
-        body.pack(fill="both", expand=True, padx=24, pady=8)
-        body.insert("1.0", "Вставь сюда текст документа.\n\nЗаголовки Markdown вида # Заголовок и списки - пункт преобразуются в стили Word.\n\nДля таблицы Excel используй табуляцию между столбцами.")
-        header_row = ctk.CTkFrame(frame, fg_color="transparent")
-        header_row.pack(fill="x", padx=24, pady=4)
-        use_header = ctk.CTkCheckBox(header_row, text="Первая строка — заголовки таблицы Excel")
-        use_header.select()
-        use_header.pack(side="left", padx=4)
-        log = ctk.CTkLabel(frame, text="Файлы создаются локально в формате Open XML.", anchor="w", justify="left")
-        log.pack(fill="x", padx=24, pady=4)
-
-        def lines() -> list[str]:
-            return [line for line in body.get("1.0", "end-1c").splitlines()]
-
-        def save_docx() -> None:
-            dest = filedialog.asksaveasfilename(defaultextension=".docx", filetypes=[("Word", "*.docx")])
-            if not dest:
-                return
-            try:
-                path = office_bridge.write_docx(dest, title.get(), lines())
-                log.configure(text=f"DOCX создан: {path} · {path.stat().st_size:,} байт")
-            except Exception as exc:  # noqa: BLE001
-                messagebox.showerror("DOCX", str(exc))
-
-        def save_xlsx() -> None:
-            dest = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel", "*.xlsx")])
-            if not dest:
-                return
-            try:
-                source_lines = [line for line in lines() if line.strip()]
-                parsed = [line.split("\t") for line in source_lines]
-                headers = bool(use_header.get())
-                if len(parsed) == 1 and len(parsed[0]) == 1:
-                    parsed = [["№", "Содержание"]] + [[str(i + 1), line] for i, line in enumerate(source_lines)]
-                    headers = True
-                path = office_bridge.write_xlsx(dest, title.get() or "Данные", parsed, headers=headers)
-                log.configure(text=f"XLSX создан: {path} · строк: {len(parsed)} · {path.stat().st_size:,} байт")
-            except Exception as exc:  # noqa: BLE001
-                messagebox.showerror("XLSX", str(exc))
-
-        def save_pptx() -> None:
-            dest = filedialog.asksaveasfilename(defaultextension=".pptx", filetypes=[("PowerPoint", "*.pptx")])
-            if not dest:
-                return
-            try:
-                content = [line.strip() for line in lines() if line.strip()]
-                slides = [(f"Раздел {i + 1}", line) for i, line in enumerate(content)]
-                path = office_bridge.write_pptx(dest, title.get(), slides or [("Пустой слайд", "Добавь текст в редактор")])
-                log.configure(text=f"PPTX создан: {path} · слайдов: {len(slides) + 1} · {path.stat().st_size:,} байт")
-            except Exception as exc:  # noqa: BLE001
-                messagebox.showerror("PPTX", str(exc))
-
-        def import_office() -> None:
-            picked = filedialog.askopenfilename(filetypes=[("Office", "*.docx *.xlsx *.pptx")])
-            if not picked:
-                return
-            try:
-                text = office_bridge.read_office(picked)
-                body.delete("1.0", "end")
-                body.insert("1.0", text)
-                title.delete(0, "end")
-                title.insert(0, Path(picked).stem)
-                log.configure(text=f"Извлечено содержимое: {picked}")
-            except Exception as exc:  # noqa: BLE001
-                messagebox.showerror("Чтение Office", str(exc))
-
-        def open_office() -> None:
-            picked = filedialog.askopenfilename(filetypes=[("Office", "*.docx *.xlsx *.pptx")])
-            if not picked:
-                return
-            try:
-                log.configure(text=office_bridge.open_with_associated_app(picked))
-            except Exception as exc:  # noqa: BLE001
-                messagebox.showerror("Открытие Office", str(exc))
-
-        row = ctk.CTkFrame(frame, fg_color="transparent")
-        row.pack(fill="x", padx=24, pady=8)
-        for label, command in [
-            ("Импортировать Office", import_office), ("Создать DOCX", save_docx),
-            ("Создать XLSX", save_xlsx), ("Создать PPTX", save_pptx),
-            ("Открыть в Office", open_office),
-        ]:
-            ctk.CTkButton(row, text=label, command=command).pack(side="left", padx=3)
+        OfficeWorkbench(frame)
 
     def _page_units(self, frame: ctk.CTkFrame) -> None:
         self._title(frame, "Конвертер единиц", "Десять категорий: от миллиметров до гигабайтов и кельвинов.")
