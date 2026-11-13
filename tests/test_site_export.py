@@ -124,7 +124,7 @@ def test_absolute_local_file_urls_become_portable_asset_paths(tmp_path: Path) ->
         assert 'src="assets/portrait%20with%20spaces.png"' in html
         assert "file:///" not in html
         assert "assets/portrait%20with%20spaces.png" in html
-        assert "portrait with spaces.png" in archive.namelist()
+        assert "assets/portrait with spaces.png" in archive.namelist()
 
 def test_project_asset_refs_are_reversible(tmp_path: Path) -> None:
     assets = tmp_path / "assets"
