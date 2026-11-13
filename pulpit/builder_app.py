@@ -22,6 +22,37 @@ def _safe_name(value: str) -> str:
     return name[:100] or "image.png"
 
 
+def _map_asset_refs(value, folder: Path, to_absolute: bool):
+    """Map assets/foo.png <-> the matching file URI for editor preview and portable saves."""
+    assets = folder / "assets"
+    if not assets.is_dir():
+        return value
+    pairs = []
+    for item in assets.iterdir():
+        if not item.is_file():
+            continue
+        try:
+            pairs.append(("assets/" + item.name, item.resolve().as_uri()))
+        except ValueError:
+            continue
+
+    def convert(text: str) -> str:
+        for relative, absolute in pairs:
+            if to_absolute:
+                text = text.replace(relative, absolute)
+            else:
+                text = text.replace(absolute, relative)
+        return text
+
+    if isinstance(value, dict):
+        return {key: _map_asset_refs(child, folder, to_absolute) for key, child in value.items()}
+    if isinstance(value, list):
+        return [_map_asset_refs(child, folder, to_absolute) for child in value]
+    if isinstance(value, str):
+        return convert(value)
+    return value
+
+
 def _migrate_legacy(legacy: dict) -> dict:
     """Keep old v2 constructor projects editable in the new builder."""
     from html import escape
@@ -96,7 +127,7 @@ class BuilderApi:
         self.folder = path.parent
         self.project_path = path
         (self.folder / "assets").mkdir(parents=True, exist_ok=True)
-        return data
+        return _map_asset_refs(data, self.folder, to_absolute=True)
 
     def get_initial_state(self) -> dict:
         document = None
@@ -137,6 +168,7 @@ class BuilderApi:
             raise ValueError("Максимум 100 страниц")
         self.folder.mkdir(parents=True, exist_ok=True)
         (self.folder / "assets").mkdir(exist_ok=True)
+        data = _map_asset_refs(data, self.folder, to_absolute=False)
         temp = self.project_path.with_suffix(".json.tmp")
         temp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         temp.replace(self.project_path)
@@ -155,10 +187,21 @@ class BuilderApi:
         path = Path(selected[0]).expanduser()
         if path.suffix.lower() != ".json":
             path = path.with_suffix(".json")
-        self.folder = path.parent.resolve()
+        data = json.loads(document_json)
+        old_folder = self.folder
+        data = _map_asset_refs(data, old_folder, to_absolute=False)
+        new_folder = path.parent.resolve()
+        source_assets = old_folder / "assets"
+        target_assets = new_folder / "assets"
+        target_assets.mkdir(parents=True, exist_ok=True)
+        if source_assets.is_dir() and source_assets.resolve() != target_assets.resolve():
+            import shutil
+            for asset in source_assets.iterdir():
+                if asset.is_file():
+                    shutil.copy2(asset, target_assets / asset.name)
+        self.folder = new_folder
         self.project_path = path.resolve()
-        (self.folder / "assets").mkdir(parents=True, exist_ok=True)
-        return self.save_project(document_json)
+        return self.save_project(json.dumps(data, ensure_ascii=False))
 
     def import_assets(self, files_json: str) -> list[dict]:
         files = json.loads(files_json)
@@ -188,7 +231,7 @@ class BuilderApi:
                 target = assets_dir / f"{stem}-{count}{ext}"
                 count += 1
             target.write_bytes(content)
-            result.append({"name": target.name, "src": f"assets/{target.name}", "bytes": len(content)})
+            result.append({"name": target.name, "src": target.resolve().as_uri(), "portableSrc": f"assets/{target.name}", "bytes": len(content)})
         return result
 
     def list_assets(self) -> list[dict]:
@@ -197,7 +240,7 @@ class BuilderApi:
         if not folder.is_dir():
             return []
         return [
-            {"name": item.name, "src": f"assets/{item.name}", "bytes": item.stat().st_size}
+            {"name": item.name, "src": item.resolve().as_uri(), "portableSrc": f"assets/{item.name}", "bytes": item.stat().st_size}
             for item in sorted(folder.iterdir(), key=lambda p: p.name.lower())
             if item.is_file() and item.suffix.lower() in allowed
         ]
