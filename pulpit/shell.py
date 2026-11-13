@@ -13,6 +13,7 @@ from pulpit import APP_NAME, __version__
 from pulpit.data_center import DataCenter
 from pulpit.engines import units
 from pulpit.office_workbench import OfficeWorkbench
+from pulpit.ir_workbench import IRWorkbench
 from pulpit.image_bench import ImageBench
 from pulpit.live_builder import LiveBuilder
 from pulpit.constructor_view import ConstructorView
@@ -47,7 +48,7 @@ class PulpitApp(ctk.CTk):
             ("home", "Обзор"), ("convert", "Стол изображений"),
             ("data", "Данные и архивы"), ("edit", "Редакторы текста"),
             ("constructor", "Конструктор страниц"), ("live", "HTML / CSS"),
-            ("office", "Документы Office"), ("units", "Конвертер единиц"),
+            ("office", "Документы Office"), ("infrared", "Инфракрасный пульт"), ("units", "Конвертер единиц"),
             ("system", "Система и диагностика"),
         ]:
             ctk.CTkButton(
@@ -65,7 +66,7 @@ class PulpitApp(ctk.CTk):
             "home": self._page_home, "convert": self._page_convert,
             "data": self._page_data, "edit": self._page_edit,
             "constructor": self._page_constructor, "live": self._page_live,
-            "office": self._page_office, "units": self._page_units,
+            "office": self._page_office, "infrared": self._page_infrared, "units": self._page_units,
             "system": self._page_system,
         }
         for key, builder in builders.items():
@@ -84,6 +85,7 @@ class PulpitApp(ctk.CTk):
             ("Данные и архивы", "JSON, CSV, XML, ZIP, таблицы и кодировки.", "data"),
             ("Редакторы текста", "Markdown, поиск и замена, преобразования, сравнение документов.", "edit"),
             ("Документы Office", "Создание и чтение DOCX, XLSX, PPTX без обязательного Microsoft Office.", "office"),
+            ("Инфракрасный пульт", "Управление телевизорами, кондиционерами и аудиотехникой через Broadlink, USB-ИК или Home Assistant.", "infrared"),
             ("Единицы измерения", "Длина, масса, площадь, объём, скорость, время, энергия, давление, температура и данные.", "units"),
             ("Диагностика", "Система, процессор, память, диск и состояние батареи.", "system"),
         ]
@@ -113,6 +115,9 @@ class PulpitApp(ctk.CTk):
 
     def _page_office(self, frame: ctk.CTkFrame) -> None:
         OfficeWorkbench(frame)
+
+    def _page_infrared(self, frame: ctk.CTkFrame) -> None:
+        IRWorkbench(frame)
 
     def _page_units(self, frame: ctk.CTkFrame) -> None:
         self._title(frame, "Конвертер единиц", "Десять категорий: от миллиметров до гигабайтов и кельвинов.")

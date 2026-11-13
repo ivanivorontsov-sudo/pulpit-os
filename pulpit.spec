@@ -8,12 +8,13 @@ binaries = []
 hiddenimports = [
     "pulpit", "pulpit.shell", "pulpit.data_center", "pulpit.text_workbench",
     "pulpit.office_workbench", "pulpit.engines.office_suite", "pulpit.engines.office_pro",
+    "pulpit.ir_workbench", "pulpit.engines.ir_remote", "broadlink", "serial", "serial.tools.list_ports_windows",
     "pulpit.system_info", "pulpit.engines", "pulpit.builder_app",
     "webview", "webview.platforms.edgechromium", "webview.platforms.winforms",
     "pythonnet", "clr_loader", "psutil",
 ]
 
-for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb", "webview", "pythonnet", "clr_loader", "psutil"):
+for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb", "webview", "pythonnet", "clr_loader", "psutil", "broadlink", "serial"):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
     datas += pkg_datas
     binaries += pkg_binaries
