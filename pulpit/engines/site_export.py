@@ -5,6 +5,7 @@ import re
 import shutil
 import tempfile
 import zipfile
+from urllib.parse import quote
 from pathlib import Path
 
 def slugify(value: str, fallback: str = "page") -> str:
@@ -22,9 +23,10 @@ def _page_document(page: dict, pages: list[dict], index: int, site_title: str, l
     name = str(page.get("name") or f"Страница {index + 1}")
     title = str(page.get("title") or f"{name} — {site_title}")
     description = str(page.get("description") or "")
-    body = str(page.get("html") or "")
-    css = str(page.get("css") or "")
-    script = str(page.get("js") or "").replace("</script", "<\\/script")
+    asset_dir = Path(page.get("_asset_dir") or ".")
+    body = _portable_asset_refs(str(page.get("html") or ""), asset_dir)
+    css = _portable_asset_refs(str(page.get("css") or ""), asset_dir)
+    script = _portable_asset_refs(str(page.get("js") or ""), asset_dir).replace("</script", "<\\/script")
     links = []
     for i, item in enumerate(pages):
         slug = slugify(item.get("slug") or item.get("name"), f"page-{i + 1}")
@@ -63,6 +65,20 @@ def _page_document(page: dict, pages: list[dict], index: int, site_title: str, l
 </body>
 </html>
 """
+
+def _portable_asset_refs(content: str, asset_dir: Path) -> str:
+    """Replace local file:// image URLs with portable paths inside the ZIP."""
+    if not content or not asset_dir.is_dir():
+        return content
+    for asset in asset_dir.iterdir():
+        if not asset.is_file():
+            continue
+        try:
+            file_url = asset.resolve().as_uri()
+        except ValueError:
+            continue
+        content = content.replace(file_url, "assets/" + quote(asset.name))
+    return content
 
 def export_site(payload: dict, asset_dir: str | Path, destination: str | Path) -> dict:
     if not isinstance(payload, dict):
@@ -115,7 +131,8 @@ main{min-height:55vh}img,video,iframe{max-width:100%}
         (root / "style.css").write_text(base_css, encoding="utf-8")
         for i, page in enumerate(normalized):
             filename = "index.html" if i == 0 else f"{page['slug']}.html"
-            (root / filename).write_text(_page_document(page, normalized, i, title, language), encoding="utf-8")
+            page_with_assets = {**page, "_asset_dir": str(Path(asset_dir).resolve())}
+            (root / filename).write_text(_page_document(page_with_assets, normalized, i, title, language), encoding="utf-8")
         (root / "README.md").write_text(
             f"# {title}\n\nСтатический сайт из Пульта.\n\nСтраниц: {len(normalized)}\nРесурсов: {asset_count}\n\nГлавная страница — index.html. Распакуйте архив и загрузите содержимое на статический хостинг, например GitHub Pages.\n",
             encoding="utf-8",
