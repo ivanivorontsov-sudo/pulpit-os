@@ -98,3 +98,31 @@ def test_legacy_project_migration_keeps_pages_and_blocks() -> None:
     assert "Заголовок" in pages[0]["component"]
     assert 'href="about.html"' in pages[0]["component"]
     assert "Текст страницы" in pages[1]["component"]
+
+def test_absolute_local_file_urls_become_portable_asset_paths(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    photo = assets / "portrait with spaces.png"
+    Image.new("RGB", (9, 6), (10, 20, 30)).save(photo)
+    file_url = photo.resolve().as_uri()
+    result = export_site(
+        {
+            "title": "Портфолио",
+            "pages": [
+                {
+                    "name": "Главная",
+                    "html": f'<section><img src="{file_url}" alt="Портрет"></section>',
+                    "css": f'.photo{{background-image:url("{file_url}")}}',
+                }
+            ],
+        },
+        assets,
+        tmp_path / "portable.zip",
+    )
+    with ZipFile(result["zip"]) as archive:
+        html = archive.read("index.html").decode("utf-8")
+        assert 'src="assets/portrait%20with%20spaces.png"' in html
+        assert "file:///" not in html
+        assert "assets/portrait%20with%20spaces.png" in html
+        assert "assets/portrait%20with%20spaces.png" in html
+        assert "portrait with spaces.png" in archive.namelist()
