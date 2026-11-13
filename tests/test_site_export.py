@@ -5,7 +5,7 @@ from zipfile import ZipFile
 
 from PIL import Image
 
-from pulpit.builder_app import _migrate_legacy
+from pulpit.builder_app import _map_asset_refs, _migrate_legacy
 from pulpit.engines.site_export import export_site, slugify
 
 
@@ -124,5 +124,21 @@ def test_absolute_local_file_urls_become_portable_asset_paths(tmp_path: Path) ->
         assert 'src="assets/portrait%20with%20spaces.png"' in html
         assert "file:///" not in html
         assert "assets/portrait%20with%20spaces.png" in html
-        assert "assets/portrait%20with%20spaces.png" in html
         assert "portrait with spaces.png" in archive.namelist()
+
+def test_project_asset_refs_are_reversible(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    photo = assets / "demo photo.png"
+    Image.new("RGB", (3, 3), (60, 70, 80)).save(photo)
+    project = {
+        "projectData": {
+            "pages": [
+                {"component": '<img src="assets/demo photo.png" alt="demo">'}
+            ]
+        }
+    }
+    preview = _map_asset_refs(project, tmp_path, to_absolute=True)
+    assert photo.resolve().as_uri() in preview["projectData"]["pages"][0]["component"]
+    portable = _map_asset_refs(preview, tmp_path, to_absolute=False)
+    assert portable["projectData"]["pages"][0]["component"] == project["projectData"]["pages"][0]["component"]
