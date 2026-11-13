@@ -36,6 +36,8 @@ def test_editors_and_markdown_safety() -> None:
     assert "<h1>" in html and "<li>" in html and "<strong>важно</strong>" in html
     unsafe = editors.markdown_to_html('<img src=x onerror="alert(1)">\n\n[опасно](javascript:alert(1))')
     assert "<img" not in unsafe and "javascript:" not in unsafe
+    encoded_scheme = editors.markdown_to_html("[обход](javascript&#58;alert(1))")
+    assert "javascript" not in encoded_scheme
     assert editors.transform_text("б\nа\nб", "unique_lines") == "б\nа"
     replaced, count = editors.find_replace("Кот кот", "кот", "пёс", ignore_case=True)
     assert replaced == "пёс пёс" and count == 2

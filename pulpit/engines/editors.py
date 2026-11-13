@@ -77,17 +77,21 @@ def compare_text(before: str, after: str, from_name: str = "Было", to_name: 
 
 
 def _safe_link(url: str) -> bool:
-    parts = urlsplit(url.strip())
+    # Repeated entity decoding prevents strings such as javascript&#58; from
+    # becoming an active scheme only after the HTML parser reads the attribute.
+    decoded = html.unescape(html.unescape(url)).strip()
+    normalized = re.sub(r"[\x00-\x20]+", "", decoded)
+    parts = urlsplit(normalized)
     if parts.scheme:
         return parts.scheme.lower() in {"http", "https", "mailto"}
-    return not url.strip().startswith("//") and not url.strip().lower().startswith(("javascript:", "data:", "vbscript:"))
+    return not normalized.startswith("//")
 
 
 def _inline(text: str) -> str:
     safe = html.escape(text, quote=False)
     safe = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", lambda m: f'<span class="md-image">[Изображение: {m.group(1)}]</span>', safe)
     def link(match: re.Match[str]) -> str:
-        label, href = match.group(1), html.unescape(match.group(2)).strip()
+        label, href = match.group(1), html.unescape(html.unescape(match.group(2))).strip()
         if not _safe_link(href):
             return label
         return f'<a href="{html.escape(href, quote=True)}" rel="noopener noreferrer">{label}</a>'
