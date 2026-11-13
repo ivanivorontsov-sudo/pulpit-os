@@ -1,5 +1,5 @@
 #define MyAppName "Пульт"
-#define MyAppVersion "1.10.0"
+#define MyAppVersion "1.11.0"
 #define MyAppPublisher "Иван Воронцов"
 #define MyAppExeName "Pulpit.exe"
 
