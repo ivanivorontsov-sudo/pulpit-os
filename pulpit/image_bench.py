@@ -81,12 +81,12 @@ class ImageBench(ctk.CTkFrame):
         if suffix not in supported_suffixes():
             messagebox.showerror("Пульт", f"Формат {suffix} не поддерживается этой сборкой Pillow.")
             return
-        width, height = self._int(self.width.get()), self._int(self.height.get())
-        quality = self._int(self.quality.get()) or 90
         try:
+            width, height = self._int(self.width.get()), self._int(self.height.get())
+            quality = self._int(self.quality.get()) or 90
             brightness = float(self.brightness.get().replace(",", ".") or "1")
-        except ValueError:
-            messagebox.showerror("Пульт", "Яркость должна быть числом, например 1.0.")
+        except ValueError as exc:
+            messagebox.showerror("Пульт", f"Проверь параметры обработки: {exc}")
             return
         saved, failed = [], []
         for index, src in enumerate(self.files, start=1):

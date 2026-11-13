@@ -8,6 +8,8 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from pulpit.engines.images import edit_image as _edit_image
+
 from pulpit.engines.images import edit_image
 
 
@@ -190,3 +192,8 @@ def save_text(path: str | Path, text: str, encoding: str = "utf-8") -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(text, encoding=encoding)
     return target
+
+
+def edit_image(src: str | Path, dest: str | Path, **options) -> Path:
+    """Совместимый адаптер к движку изображений для старых интеграций."""
+    return _edit_image(src, dest, **options)

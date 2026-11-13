@@ -11,7 +11,7 @@ from tkinter import filedialog, messagebox
 
 import customtkinter as ctk
 
-from pulpit.engines import converters
+from pulpit.engines import converters, office_bridge
 
 
 class DataCenter(ctk.CTkFrame):
@@ -51,6 +51,7 @@ class DataCenter(ctk.CTkFrame):
             ("JSON → XML", lambda: self.convert_data("json", "xml")),
             ("XML → JSON", lambda: self.convert_data("xml", "json")),
             ("Сохранить результат", self.save_data),
+            ("CSV → XLSX", self.csv_to_excel),
         ]:
             ctk.CTkButton(actions, text=label, command=callback).pack(side="left", padx=3)
         self.data_status = ctk.CTkLabel(tab, text="Готов к работе", anchor="w", justify="left")
@@ -160,6 +161,25 @@ class DataCenter(ctk.CTkFrame):
             self.data_status.configure(text=f"Сохранено: {path} · {path.stat().st_size:,} байт")
         except OSError as exc:
             messagebox.showerror("Сохранение", str(exc))
+
+
+    def csv_to_excel(self) -> None:
+        picked = filedialog.askopenfilename(title="CSV для Excel", filetypes=[("CSV", "*.csv *.tsv"), ("Все файлы", "*.*")])
+        if not picked:
+            return
+        source = Path(picked)
+        dest = filedialog.asksaveasfilename(
+            initialfile=source.stem + ".xlsx",
+            defaultextension=".xlsx",
+            filetypes=[("Excel", "*.xlsx")],
+        )
+        if not dest:
+            return
+        try:
+            path = office_bridge.csv_to_xlsx(source, dest)
+            self.data_status.configure(text=f"Таблица Excel создана: {path} · {path.stat().st_size:,} байт")
+        except Exception as exc:  # noqa: BLE001
+            messagebox.showerror("CSV → XLSX", str(exc))
 
     def pack_folder(self) -> None:
         folder = filedialog.askdirectory(title="Папка для упаковки")
