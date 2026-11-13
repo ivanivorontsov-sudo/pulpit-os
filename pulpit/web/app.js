@@ -130,6 +130,7 @@ function makeGrapesEditor(doc) {
   $("gjs").style.display = "block";
   const project = doc && doc.projectData && doc.projectData.pages && doc.projectData.pages.length ? doc.projectData : defaultDocument.projectData;
   pageMeta = Object.assign({}, doc && doc.pageMeta || {});
+  window.projectLanguage = doc && doc.language || "ru";
   const first = project.pages[0];
   editor = grapesjs.init({
     container:"#gjs",
@@ -155,9 +156,9 @@ function makeGrapesEditor(doc) {
     traitManager:{appendTo:"#traits"},
     selectorManager:{componentFirst:true},
     deviceManager:{devices:[
-      {name:"Desktop",width:""},
-      {name:"Tablet",width:"768px",height:"1024px"},
-      {name:"Mobile",width:"390px",height:"844px"}
+      {id:"Desktop",name:"Desktop",width:""},
+      {id:"Tablet",name:"Tablet",width:"768px",height:"1024px"},
+      {id:"Mobile",name:"Mobile",width:"390px",height:"844px"}
     ]},
     assetManager:{assets:[],upload:false,embedAsBase64:false},
     canvas:{styles:[]}
@@ -633,6 +634,7 @@ function renderFallback() {
   });
   select.value = fallback.pages[fallback.index].id;
   const page = fallback.pages[fallback.index];
+  activePageId = page.id;
   const frame = $("fallback-frame");
   frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>' + fallback.css + '</style><style>body{min-height:100vh;outline:0;}</style></head><body contenteditable="true">' + page.html + '</body></html>';
   frame.onload = () => {
@@ -752,16 +754,28 @@ function bindEvents() {
     if (e.key === "Escape" && !$("modal-overlay").hidden) closeModal();
   });
 }
-window.addEventListener("pywebviewready",async() => {
-  api = window.pywebview.api;
+let eventsBound = false;
+let bootstrapped = false;
+function bindEventsOnce() {
+  if (eventsBound) return;
+  eventsBound = true;
   bindEvents();
+}
+window.addEventListener("pywebviewready",async() => {
+  if (bootstrapped) return;
+  bootstrapped = true;
+  api = window.pywebview.api;
+  bindEventsOnce();
   await initializeApp();
 });
 window.addEventListener("DOMContentLoaded",() => {
-  if (!window.pywebview) {
-    bindEvents();
-    initializeFallback(defaultProject());
-    $("loading").hidden = true;
-    toast("Запущен автономный предпросмотр. Файловый экспорт доступен в настольном приложении.","warn");
-  }
+  window.setTimeout(() => {
+    if (!bootstrapped && !api) {
+      bootstrapped = true;
+      bindEventsOnce();
+      initializeFallback(defaultProject());
+      $("loading").hidden = true;
+      toast("Запущен автономный предпросмотр. Файловый экспорт доступен в настольном приложении.","warn");
+    }
+  },2500);
 });
