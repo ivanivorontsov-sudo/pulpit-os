@@ -71,11 +71,12 @@ def test_export_escapes_metadata_and_unique_slugs(tmp_path: Path) -> None:
     }, tmp_path / "missing-assets", tmp_path / "site.zip")
     with ZipFile(result["zip"]) as archive:
         names = set(archive.namelist())
-        assert "about.html" in names
+        assert "index.html" in names
         assert "about-2.html" in names
         first = archive.read("index.html").decode("utf-8")
         assert "&lt;script&gt;alert(1)&lt;/script&gt;" in first
         assert "<script>alert(1)</script>" not in first
+        assert "about-2.html" in first
 
 
 def test_legacy_project_migration_keeps_pages_and_blocks() -> None:
