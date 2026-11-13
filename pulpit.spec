@@ -5,13 +5,15 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = []
 binaries = []
-hiddenimports = ["pulpit", "pulpit.shell", "pulpit.engines"]
+hiddenimports = ["pulpit", "pulpit.shell", "pulpit.engines", "pulpit.builder_app", "webview", "webview.platforms.edgechromium", "webview.platforms.winforms", "pythonnet", "clr_loader"]
 
-for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb"):
+for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb", "webview", "pythonnet", "clr_loader"):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
     datas += pkg_datas
     binaries += pkg_binaries
     hiddenimports += pkg_hidden
+
+datas += [("pulpit/web", "pulpit/web")]
 
 a = Analysis(
     ["main.py"],
