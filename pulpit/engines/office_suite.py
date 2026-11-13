@@ -28,7 +28,7 @@ from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from pptx import Presentation
-from pptx.dml import RGBColor
+from pptx.dml.color import RGBColor
 from pptx.util import Inches, Pt as PptPt
 
 
