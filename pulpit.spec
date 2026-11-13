@@ -1,13 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Сборка Pulpit.exe для Windows 11. CustomTkinter тащит свои данные сам."""
+"""Сборка Pulpit.exe для Windows 11."""
 
 from PyInstaller.utils.hooks import collect_all
 
 datas = []
 binaries = []
-hiddenimports = ["pulpit", "pulpit.shell", "pulpit.engines", "pulpit.builder_app", "webview", "webview.platforms.edgechromium", "webview.platforms.winforms", "pythonnet", "clr_loader"]
+hiddenimports = [
+    "pulpit", "pulpit.shell", "pulpit.data_center", "pulpit.text_workbench",
+    "pulpit.system_info", "pulpit.engines", "pulpit.builder_app",
+    "webview", "webview.platforms.edgechromium", "webview.platforms.winforms",
+    "pythonnet", "clr_loader", "psutil",
+]
 
-for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb", "webview", "pythonnet", "clr_loader"):
+for package in ("customtkinter", "PIL", "docx", "openpyxl", "pptx", "tkinterweb", "webview", "pythonnet", "clr_loader", "psutil"):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
     datas += pkg_datas
     binaries += pkg_binaries

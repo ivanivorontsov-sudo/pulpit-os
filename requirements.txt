@@ -5,3 +5,4 @@ openpyxl>=3.1.5
 python-pptx>=1.0.2
 tkinterweb>=4.20
 pywebview==6.2.1
+psutil>=6.1.0

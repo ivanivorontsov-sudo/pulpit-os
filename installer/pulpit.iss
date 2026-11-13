@@ -1,47 +1,35 @@
-; Установщик Пульта. Собирает папку PyInstaller в один Setup.exe.
-
 #define MyAppName "Пульт"
-#define MyAppVersion "1.8.0"
-#define MyAppPublisher "ivanivorontsov-sudo"
+#define MyAppVersion "1.9.0"
+#define MyAppPublisher "Иван Воронцов"
 #define MyAppExeName "Pulpit.exe"
-#define MyAppId "{{8F4C1A72-6B2E-4D91-9C33-0A11B17E0001}"
 
 [Setup]
-AppId={#MyAppId}
+AppId={{A1D4A6C2-4F17-49DA-97D1-1D67E0B41091}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\Pulpit
 DefaultGroupName={#MyAppName}
-DisableProgramGroupPage=yes
 OutputDir=..\dist\installer
 OutputBaseFilename=Pulpit-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
-PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
-UninstallDisplayIcon={app}\{#MyAppExeName}
-SetupIconFile=
-CloseApplications=yes
+ArchitecturesInstallIn64BitMode=x64
+UninstallDisplayIcon={app}\Pulpit.exe
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "Ярлык на рабочем столе"; GroupDescription: "Ярлыки:"; Flags: unchecked
+Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; GroupDescription: "Дополнительные значки:"; Flags: unchecked
 
 [Files]
 Source: "..\dist\Pulpit\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
-Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Пульт"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\Пульт"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\Пульт"; Filename: "{app}\Pulpit.exe"
+Name: "{autodesktop}\Пульт"; Filename: "{app}\Pulpit.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Запустить Пульт"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Pulpit.exe"; Description: "Запустить Пульт"; Flags: nowait postinstall skipifsilent
