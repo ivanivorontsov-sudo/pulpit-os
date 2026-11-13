@@ -11,11 +11,9 @@ import customtkinter as ctk
 
 from pulpit import APP_NAME, __version__
 from pulpit.engines import converters, editors, office_bridge, units
-from pulpit.canvas_editor import CanvasEditor
 from pulpit.live_builder import LiveBuilder
 from pulpit.constructor_view import ConstructorView
 from pulpit.image_bench import ImageBench
-from pulpit.studio import SiteStudio
 
 
 ctk.set_appearance_mode("dark")
@@ -47,9 +45,8 @@ class PulpitApp(ctk.CTk):
             ("convert", "Картинки"),
             ("data", "Данные"),
             ("edit", "Редакторы"),
-            ("site", "Редактор сайта"),
-            ("constructor", "Конструктор"),
-            ("live", "Живой HTML"),
+            ("constructor", "Конструктор страниц"),
+            ("live", "HTML / CSS"),
             ("office", "Office"),
             ("units", "Единицы"),
             ("system", "Система"),
@@ -73,9 +70,7 @@ class PulpitApp(ctk.CTk):
             "convert": self._page_convert,
             "data": self._page_data,
             "edit": self._page_edit,
-            "site": self._page_site,
             "constructor": self._page_constructor,
-            "canvas": self._page_canvas,
             "live": self._page_live,
             "office": self._page_office,
             "units": self._page_units,
@@ -95,12 +90,13 @@ class PulpitApp(ctk.CTk):
         text = (
             "Конвертеры картинок, JSON и CSV.\n"
             "Редактор текста, markdown и простой фотоцех.\n"
-            "Интерактивный редактор сайта: страницы, блоки, картинки и zip.\n"
+            "Визуальный конструктор сайтов: drag & drop, стили, страницы, SEO и экспорт ZIP.\n"
             "Мост к Microsoft Office: DOCX, XLSX, PPTX. Word, Excel и PowerPoint открывают как свои.\n"
             "Единицы измерения и карточка системы."
         )
         ctk.CTkLabel(frame, text=text, justify="left", font=ctk.CTkFont(size=16)).pack(anchor="w", padx=24, pady=12)
-        ctk.CTkButton(frame, text="Живой HTML", command=lambda: self.show("live")).pack(anchor="w", padx=24, pady=8)
+        ctk.CTkButton(frame, text="Открыть конструктор страниц", command=lambda: self.show("constructor")).pack(anchor="w", padx=24, pady=8)
+        ctk.CTkButton(frame, text="HTML / CSS редактор", command=lambda: self.show("live")).pack(anchor="w", padx=24, pady=8)
         ctk.CTkButton(frame, text="Проверить Office", command=lambda: self.show("office")).pack(anchor="w", padx=24, pady=8)
 
     def _page_convert(self, frame: ctk.CTkFrame) -> None:
@@ -185,14 +181,8 @@ class PulpitApp(ctk.CTk):
     def _page_live(self, frame: ctk.CTkFrame) -> None:
         LiveBuilder(frame)
 
-    def _page_canvas(self, frame: ctk.CTkFrame) -> None:
-        CanvasEditor(frame)
-
     def _page_constructor(self, frame: ctk.CTkFrame) -> None:
         ConstructorView(frame)
-
-    def _page_site(self, frame: ctk.CTkFrame) -> None:
-        SiteStudio(frame)
 
     def _page_office(self, frame: ctk.CTkFrame) -> None:
         self._title(frame, "Совместимость с Microsoft Office", "DOCX, XLSX, PPTX. Office не обязан быть установлен, чтобы файл родился.")
