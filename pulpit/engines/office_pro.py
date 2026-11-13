@@ -495,10 +495,20 @@ def excel_find_replace(workbook: Any, search: str, replacement: str, *, match_ca
 
 # PowerPoint: обновление исходной презентации без удаления нетронутых объектов.
 def _slide_body_shape(slide: Any) -> Any | None:
+    # python-pptx returns a new proxy object on each lookup, so compare the
+    # underlying shape id instead of Python object identity.
     title = slide.shapes.title
-    candidates = [shape for shape in slide.shapes if shape is not title and getattr(shape, "has_text_frame", False)]
+    title_id = title.shape_id if title is not None else None
+    candidates = [
+        shape for shape in slide.shapes
+        if shape.shape_id != title_id and getattr(shape, "has_text_frame", False)
+    ]
     placeholders = [shape for shape in candidates if getattr(shape, "is_placeholder", False)]
-    return (placeholders or candidates or [None])[0]
+    body_placeholders = [
+        shape for shape in placeholders
+        if getattr(shape.placeholder_format, "type", None) not in {1, 3, 5, 13}
+    ]
+    return (body_placeholders or placeholders or candidates or [None])[0]
 
 
 def _set_slide_text(shape: Any, value: str) -> None:
