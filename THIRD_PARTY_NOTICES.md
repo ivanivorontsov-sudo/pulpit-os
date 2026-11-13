@@ -12,6 +12,8 @@
 | openpyxl | MIT | https://foss.heptapod.net/openpyxl/openpyxl |
 | python-pptx | MIT | https://github.com/scanny/python-pptx |
 | TkinterWeb | MIT | https://github.com/Andereoo/TkinterWeb |
+| GrapesJS 0.23.9 | BSD-3-Clause | https://github.com/GrapesJS/grapesjs |
+| pywebview 6.2.1 | BSD-3-Clause | https://github.com/r0x0r/pywebview |
 | Python и Tcl/Tk | PSF License, Tcl/Tk License | https://www.python.org/ |
 | PyInstaller (сборка) | GPL-2.0 с исключением для загрузчика | https://github.com/pyinstaller/pyinstaller |
 | Inno Setup (установщик) | Inno Setup License | https://jrsoftware.org/isinfo.php |
